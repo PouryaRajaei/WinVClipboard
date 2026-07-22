@@ -16,4 +16,8 @@
     <Resource Include="Assets\WinVClipboard.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.2" />
+  </ItemGroup>
+
 </Project>

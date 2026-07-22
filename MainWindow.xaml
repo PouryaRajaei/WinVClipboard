@@ -4,21 +4,24 @@
  <Border Background="{StaticResource PanelBrush}" CornerRadius="14" BorderBrush="#33FFFFFF" BorderThickness="1">
   <Border.Effect><DropShadowEffect BlurRadius="28" ShadowDepth="8" Opacity="0.55"/></Border.Effect>
   <Grid Margin="14">
-   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <Grid Margin="2,0,2,12">
     <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
      <TextBlock Text="▣" FontSize="21" Foreground="#FF7DB6FF" Margin="0,0,9,0"/><TextBlock Text="Clipboard" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
      <Border Background="#263A96DD" CornerRadius="10" Margin="9,1,0,0" Padding="7,2"><TextBlock x:Name="CountText" Foreground="#FFBBDDFF" FontSize="11"/></Border>
     </StackPanel>
-    <StackPanel Grid.Column="1" Orientation="Horizontal"><Button x:Name="PinnedOnlyButton" Content="📌 فقط پین‌ها" ToolTip="نمایش فقط موارد پین‌شده" Click="PinnedOnlyButton_Click" FontSize="12"/><Button Content="پاک‌کردن" ToolTip="حذف موارد پین‌نشده" Click="ClearButton_Click" FontSize="12"/><Button Content="⏻ خروج" ToolTip="بستن کامل برنامه" Click="ExitButton_Click" Foreground="#FFFFA0A0" FontSize="12"/><Button Content="✕" ToolTip="مخفی‌کردن پنل" Click="HideButton_Click" FontSize="14"/></StackPanel>
+    <StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="⌨" ToolTip="میانبرهای نوشتاری" Click="TextShortcutsButton_Click" FontSize="16"/><Button x:Name="PinnedOnlyButton" Content="📌" ToolTip="نمایش فقط موارد پین‌شده" Click="PinnedOnlyButton_Click" FontSize="15"/><Button Content="پاک‌کردن" ToolTip="حذف موارد پین‌نشده" Click="ClearButton_Click" FontSize="12"/><Button Content="⏻ خروج" ToolTip="بستن کامل برنامه" Click="ExitButton_Click" Foreground="#FFFFA0A0" FontSize="12"/><Button Content="✕" ToolTip="مخفی‌کردن پنل" Click="HideButton_Click" FontSize="14"/></StackPanel>
    </Grid>
-   <Border Grid.Row="1" Background="#FF292929" CornerRadius="8" BorderBrush="#22FFFFFF" BorderThickness="1" Margin="0,0,0,10">
+   <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,9">
+    <StackPanel x:Name="CategoriesPanel" Orientation="Horizontal"/>
+   </ScrollViewer>
+   <Border Grid.Row="2" Background="#FF292929" CornerRadius="8" BorderBrush="#22FFFFFF" BorderThickness="1" Margin="0,0,0,10">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="⌕" Foreground="{StaticResource MutedBrush}" FontSize="19" HorizontalAlignment="Center" VerticalAlignment="Center"/>
      <TextBox x:Name="SearchBox" Grid.Column="1" Background="Transparent" BorderThickness="0" Foreground="White" CaretBrush="White" FontSize="14" Padding="0,9,8,9" TextChanged="SearchBox_TextChanged" ToolTip="جست‌وجو"/>
     </Grid>
    </Border>
-   <Grid Grid.Row="2">
+   <Grid Grid.Row="3">
     <ListBox x:Name="ClipsList" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="ClipsList_MouseDoubleClick">
      <ListBox.Resources><Style TargetType="ListBoxItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,0,0,7"/><Setter Property="Padding" Value="0"/><Setter Property="Background" Value="Transparent"/>
       <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Border x:Name="Outer" Background="{StaticResource CardBrush}" CornerRadius="9" BorderBrush="#18FFFFFF" BorderThickness="1"><ContentPresenter/></Border>
@@ -28,12 +31,12 @@
       <TextBlock Text="{Binding Icon}" FontSize="17" Foreground="#FF91C5FF" VerticalAlignment="Top"/><StackPanel Grid.Column="1" Margin="2,0,9,0">
        <Image Source="{Binding Thumbnail}" MaxWidth="245" MaxHeight="120" HorizontalAlignment="Left" Stretch="Uniform" Margin="0,0,0,5"><Image.Style><Style TargetType="Image"><Style.Triggers><Trigger Property="Source" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></Trigger></Style.Triggers></Style></Image.Style></Image>
        <TextBlock Text="{Binding Preview}" FlowDirection="{Binding TextFlowDirection}" TextAlignment="Left" Foreground="White" TextWrapping="Wrap" MaxHeight="64" FontSize="13.5"/><TextBlock Text="{Binding Details}" FlowDirection="RightToLeft" Foreground="{StaticResource MutedBrush}" FontSize="10.5" Margin="0,6,0,0"/></StackPanel>
-      <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top"><Button Content="{Binding PinGlyph}" Tag="{Binding}" Click="PinButton_Click" ToolTip="پین" Padding="6,3" FontSize="15"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Foreground" Value="#FFAAAAAA"/><Setter Property="Background" Value="Transparent"/><Style.Triggers><DataTrigger Binding="{Binding IsPinned}" Value="True"><Setter Property="Foreground" Value="#FF55B5FF"/><Setter Property="Background" Value="#3355B5FF"/></DataTrigger></Style.Triggers></Style></Button.Style></Button><Button Content="🗑" Tag="{Binding}" Click="DeleteButton_Click" ToolTip="حذف" Padding="5,2" FontSize="15"/></StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top"><Button Content="{Binding CategoryLabel}" Visibility="{Binding CategoryVisibility}" Tag="{Binding}" Click="CategoryButton_Click" ToolTip="انتخاب دسته" Padding="6,3" FontSize="10" Foreground="#FF9FD0FF" Background="#223A96DD"/><Button Content="{Binding PinGlyph}" Tag="{Binding}" Click="PinButton_Click" ToolTip="پین" Padding="6,3" FontSize="15"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Foreground" Value="#FFAAAAAA"/><Setter Property="Background" Value="Transparent"/><Style.Triggers><DataTrigger Binding="{Binding IsPinned}" Value="True"><Setter Property="Foreground" Value="#FF55B5FF"/><Setter Property="Background" Value="#3355B5FF"/></DataTrigger></Style.Triggers></Style></Button.Style></Button><Button Content="🗑" Tag="{Binding}" Click="DeleteButton_Click" ToolTip="حذف" Padding="5,2" FontSize="15"/></StackPanel>
      </Grid></DataTemplate></ListBox.ItemTemplate>
     </ListBox>
     <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock Text="▣" Foreground="#667DB6FF" FontSize="42" HorizontalAlignment="Center"/><TextBlock Text="هنوز چیزی کپی نشده است" Foreground="{StaticResource MutedBrush}" Margin="0,10,0,0"/></StackPanel>
    </Grid>
-   <Grid Grid.Row="3" Margin="3,9,3,0"><TextBlock Text="Enter: چسباندن   •   Esc: بستن   •   Win+V: نمایش" Foreground="#FF8C8C8C" FontSize="10.5"/><Button Content="خروج از برنامه" HorizontalAlignment="Right" Foreground="#FFAAAAAA" Padding="4,1" FontSize="10.5" Click="ExitButton_Click"/></Grid>
+   <Grid Grid.Row="4" Margin="3,9,3,0"><TextBlock Text="Enter: چسباندن   •   Esc: بستن   •   Win+V: نمایش" Foreground="#FF8C8C8C" FontSize="10.5"/><Button Content="خروج از برنامه" HorizontalAlignment="Right" Foreground="#FFAAAAAA" Padding="4,1" FontSize="10.5" Click="ExitButton_Click"/></Grid>
   </Grid>
  </Border>
 </Window>
