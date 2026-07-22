@@ -58,5 +58,43 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <ControlTemplate x:Key="MinimalVerticalScrollBarTemplate" TargetType="ScrollBar">
+            <Border Width="8" Margin="1,2" Background="{TemplateBinding Background}" CornerRadius="4">
+                <Track x:Name="PART_Track" Orientation="Vertical" IsDirectionReversed="True"
+                       Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                       Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                       ViewportSize="{TemplateBinding ViewportSize}">
+                    <Track.DecreaseRepeatButton><RepeatButton Command="ScrollBar.PageUpCommand" Background="Transparent" BorderThickness="0" Focusable="False"/></Track.DecreaseRepeatButton>
+                    <Track.Thumb><Thumb MinHeight="40"><Thumb.Template><ControlTemplate TargetType="Thumb"><Border x:Name="ThumbBar" Background="#FF71869A" CornerRadius="3" Margin="1.5,1"/><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ThumbBar" Property="Background" Value="#FF69B6FF"/></Trigger><Trigger Property="IsDragging" Value="True"><Setter TargetName="ThumbBar" Property="Background" Value="#FF4EA8F5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+                    <Track.IncreaseRepeatButton><RepeatButton Command="ScrollBar.PageDownCommand" Background="Transparent" BorderThickness="0" Focusable="False"/></Track.IncreaseRepeatButton>
+                </Track>
+            </Border>
+        </ControlTemplate>
+        <ControlTemplate x:Key="MinimalHorizontalScrollBarTemplate" TargetType="ScrollBar">
+            <Border Height="8" Margin="2,1" Background="{TemplateBinding Background}" CornerRadius="4">
+                <Track x:Name="PART_Track" Orientation="Horizontal"
+                       Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                       Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                       ViewportSize="{TemplateBinding ViewportSize}">
+                    <Track.DecreaseRepeatButton><RepeatButton Command="ScrollBar.PageLeftCommand" Background="Transparent" BorderThickness="0" Focusable="False"/></Track.DecreaseRepeatButton>
+                    <Track.Thumb><Thumb MinWidth="40"><Thumb.Template><ControlTemplate TargetType="Thumb"><Border x:Name="ThumbBar" Background="#FF71869A" CornerRadius="3" Margin="1,1.5"/><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ThumbBar" Property="Background" Value="#FF69B6FF"/></Trigger><Trigger Property="IsDragging" Value="True"><Setter TargetName="ThumbBar" Property="Background" Value="#FF4EA8F5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+                    <Track.IncreaseRepeatButton><RepeatButton Command="ScrollBar.PageRightCommand" Background="Transparent" BorderThickness="0" Focusable="False"/></Track.IncreaseRepeatButton>
+                </Track>
+            </Border>
+        </ControlTemplate>
+        <Style x:Key="MinimalScrollBarStyle" TargetType="ScrollBar">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="Auto"/>
+            <Setter Property="Background" Value="#1FFFFFFF"/>
+            <Setter Property="Template" Value="{StaticResource MinimalVerticalScrollBarTemplate}"/>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto"/>
+                    <Setter Property="Height" Value="10"/>
+                    <Setter Property="Template" Value="{StaticResource MinimalHorizontalScrollBarTemplate}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource MinimalScrollBarStyle}"/>
     </Application.Resources>
 </Application>

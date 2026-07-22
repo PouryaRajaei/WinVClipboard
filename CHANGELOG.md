@@ -4,6 +4,78 @@
 
 ## [Unreleased]
 
+## [1.5.12] - 2026-07-22
+
+### Fixed
+
+- محدودیت اشتباه ارتفاع ۱۰ پیکسلی از ScrollBar عمودی حذف و قالب‌های عمودی و افقی کاملاً جدا شدند.
+- Removed the accidental 10-pixel height constraint from vertical scrollbars and split vertical/horizontal templates.
+
+## [1.5.11] - 2026-07-22
+
+### Fixed
+
+- ارتفاع Thumb از ViewportHeight واقعی لیست محاسبه می‌شود و حداقل ارتفاع ظاهری آن به ۴۰ پیکسل افزایش یافت.
+- The thumb height now uses the list's real ViewportHeight and has a 40-pixel visual minimum.
+
+## [1.5.10] - 2026-07-22
+
+### Fixed
+
+- موقعیت دستگیره اسکرول‌بار به Minimum، Maximum، Value و Viewport واقعی متصل شد و دیگر در وسط گیر نمی‌کند.
+- Bound the scrollbar thumb to the real minimum, maximum, value, and viewport so it no longer remains stuck in the middle.
+
+## [1.5.9] - 2026-07-22
+
+### Fixed
+
+- دستگیره اسکرول‌بار حداقل طول ثابت و قابل‌گرفتن دارد و در محتوای بلند دیگر به شکل نقطه دیده نمی‌شود.
+- Gave the scrollbar thumb a fixed usable minimum length so it no longer collapses into a dot for long content.
+- وقتی محتوا کوتاه است و نیازی به اسکرول نیست، اسکرول‌بار کاملاً مخفی می‌شود.
+- The scrollbar is hidden completely when the content does not require scrolling.
+
+## [1.5.8] - 2026-07-22
+
+### Fixed
+
+- جهت Track اسکرول‌بار به Orientation کنترل متصل شد تا دستگیره عمودی واقعاً رسم و نمایش داده شود.
+- Bound the scrollbar track to the control orientation so the vertical thumb is rendered correctly.
+
+## [1.5.7] - 2026-07-22
+
+### Fixed
+
+- نمایش اسکرول‌بار عمودی در صفحه اصلی اجباری شد و ریل و دستگیره با کنتراست واضح‌تر طراحی شدند.
+- Forced the main vertical scrollbar to remain visible and increased track/thumb contrast.
+
+## [1.5.6] - 2026-07-22
+
+### Changed
+
+- حرکت چرخ موس به اسکرول پیکسلی نرم، آرام و انیمیشنی تبدیل شد تا پرش بین آیتم‌ها حذف شود.
+- Replaced item-based mouse-wheel jumps with slower, animated pixel-based scrolling.
+
+## [1.5.5] - 2026-07-22
+
+### Fixed
+
+- اسکرول‌بار در حالت عادی و هنگام اسکرول با چرخ موس واضح‌تر شد و دستگیره حداقل ارتفاع مناسب دارد.
+- Improved scrollbar visibility during mouse-wheel scrolling and added a practical minimum thumb height.
+
+## [1.5.4] - 2026-07-22
+
+### Changed
+
+- آیکن ورود به تنظیمات با آیکن استاندارد چرخ‌دندهٔ ویندوز جایگزین شد.
+- Replaced the settings entry icon with the standard Windows gear icon.
+
+## [1.5.3] - 2026-07-22
+
+### Changed
+
+- اسکرول‌بارهای باریک، گرد و مینیمال بدون دکمه‌های فلش؛ با بازخورد ظریف هنگام Hover و Drag.
+- Thin, rounded, minimalist scrollbars without arrow buttons, with subtle hover and drag feedback.
+
 ### Planned
 
 - بسته‌بندی و انتشار عمومی در Microsoft Store
@@ -143,7 +215,17 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.2...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.12...HEAD
+[1.5.12]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.11...v1.5.12
+[1.5.11]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.10...v1.5.11
+[1.5.10]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.9...v1.5.10
+[1.5.9]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.8...v1.5.9
+[1.5.8]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.7...v1.5.8
+[1.5.7]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.6...v1.5.7
+[1.5.6]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.5...v1.5.6
+[1.5.5]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.4...v1.5.5
+[1.5.4]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.3...v1.5.4
+[1.5.3]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.2...v1.5.3
 [1.5.2]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.4.0...v1.5.0

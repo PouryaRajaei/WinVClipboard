@@ -128,7 +128,7 @@ The project follows [Semantic Versioning](https://semver.org/) using `MAJOR.MINO
 - `MINOR` for backward-compatible features
 - `PATCH` for backward-compatible fixes
 
-Current version: **1.5.2**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
+Current version: **1.5.12**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
 
 See [STORE-PUBLISHING.md](STORE-PUBLISHING.md) for packaging and Store submission instructions.
 

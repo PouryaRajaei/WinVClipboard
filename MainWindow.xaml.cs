@@ -10,6 +10,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
@@ -51,11 +52,16 @@ public partial class MainWindow : Window
     private string _lastWorkingHotkey = "Win+V";
     private readonly Dictionary<int, string> _categoryHotkeyMap = [];
     private readonly HashSet<int> _registeredHotkeyIds = [];
+    private readonly DispatcherTimer _smoothScrollTimer;
+    private System.Windows.Controls.ScrollViewer? _clipsScrollViewer;
+    private double _smoothScrollTarget;
     private static readonly UIntPtr InjectionMarker = new(0xC0D3);
 
     public MainWindow()
     {
         InitializeComponent();
+        _smoothScrollTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
+        _smoothScrollTimer.Tick += SmoothScrollTimer_Tick;
         ApplyPanelSize(Localizer.CurrentPanelSize);
         ClipsList.ItemsSource = _filtered;
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinVClipboard");
@@ -64,6 +70,44 @@ public partial class MainWindow : Window
         _categoriesPath = Path.Combine(folder, "categories.json");
         _textShortcutsPath = Path.Combine(folder, "text-shortcuts.json");
         LoadHistory(); LoadCategories(); LoadTextShortcuts(); RefreshFilter();
+    }
+
+    private void ClipsList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        _clipsScrollViewer ??= FindVisualChild<System.Windows.Controls.ScrollViewer>(ClipsList);
+        if (_clipsScrollViewer is null) return;
+
+        if (!_smoothScrollTimer.IsEnabled) _smoothScrollTarget = _clipsScrollViewer.VerticalOffset;
+        var distance = e.Delta / 120.0 * 42.0;
+        _smoothScrollTarget = Math.Clamp(_smoothScrollTarget - distance, 0, _clipsScrollViewer.ScrollableHeight);
+        _smoothScrollTimer.Start();
+        e.Handled = true;
+    }
+
+    private void SmoothScrollTimer_Tick(object? sender, EventArgs e)
+    {
+        if (_clipsScrollViewer is null) { _smoothScrollTimer.Stop(); return; }
+        _smoothScrollTarget = Math.Clamp(_smoothScrollTarget, 0, _clipsScrollViewer.ScrollableHeight);
+        var remaining = _smoothScrollTarget - _clipsScrollViewer.VerticalOffset;
+        if (Math.Abs(remaining) < 0.35)
+        {
+            _clipsScrollViewer.ScrollToVerticalOffset(_smoothScrollTarget);
+            _smoothScrollTimer.Stop();
+            return;
+        }
+        _clipsScrollViewer.ScrollToVerticalOffset(_clipsScrollViewer.VerticalOffset + remaining * 0.22);
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match) return match;
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null) return nested;
+        }
+        return null;
     }
 
     public void InitializeInBackground(bool showImmediately = false)
