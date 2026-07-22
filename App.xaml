@@ -7,8 +7,11 @@
         <SolidColorBrush x:Key="CardBrush" Color="#FF2B2B2B"/>
         <SolidColorBrush x:Key="HoverBrush" Color="#FF383838"/>
         <SolidColorBrush x:Key="MutedBrush" Color="#FFB8B8B8"/>
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="White"/>
+        <SolidColorBrush x:Key="SearchBrush" Color="#FF292929"/>
+        <system:Double x:Key="ThumbnailMaxWidth" xmlns:system="clr-namespace:System;assembly=System.Runtime">245</system:Double>
         <Style TargetType="Button">
-            <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/><Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Padding" Value="8,5"/>
         </Style>
     </Application.Resources>

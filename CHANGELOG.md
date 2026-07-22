@@ -8,6 +8,30 @@
 
 - بسته‌بندی و انتشار عمومی در Microsoft Store
 
+## [1.3.0] - 2026-07-22
+
+### Added
+
+- System Tray با فرمان‌های بازکردن، تنظیمات و خروج
+- کنترل Startup ویندوز از داخل برنامه
+- پنجرهٔ تنظیمات مستقل با پنج بخش
+- خروجی و بازیابی فایل پشتیبان
+- توقف ثبت کلیپ‌بورد، حذف خودکار، استثنای برنامه‌ها و کنترل ذخیرهٔ تصاویر
+- پوسته‌های Dark، Light و System
+- ظرفیت تاریخچه و اندازهٔ thumbnail قابل تنظیم
+- میانبر نمایش `Win+V` یا `Win+C` و پین‌های `Ctrl/Alt + 1…9`
+- صفحهٔ About و بررسی نسخهٔ جدید از GitHub
+- GitHub Actions برای ساخت و Release خودکار x64/ARM64
+- ابزارهای MSIX و امضای اختیاری با secrets
+
+## [1.2.0] - 2026-07-22
+
+### Added
+
+- انتخاب اندازهٔ کوچک، متوسط یا بزرگ برای پنل از منوی تنظیمات
+- اعمال آنی اندازه و جای‌گذاری مجدد پنل روی مانیتور فعال
+- ذخیرهٔ اندازهٔ انتخاب‌شده برای اجراهای بعدی
+
 ## [1.1.1] - 2026-07-22
 
 ### Changed
@@ -42,7 +66,9 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/PouryaRajaei/WinVClipboard/releases/tag/v1.0.0

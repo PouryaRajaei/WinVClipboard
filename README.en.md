@@ -31,6 +31,16 @@ Windows' built-in clipboard keeps a limited history and offers little organizati
 - Single-instance operation
 - Hidden startup mode via the `--startup` argument
 - Fully bilingual Persian/English UI with instant RTL/LTR switching and a persisted language preference
+- Three persistent panel sizes: small, medium, and large
+- System Tray icon with quick Open, Settings, and Exit actions
+- In-app Start with Windows control
+- Dedicated General, Appearance, Privacy, Backup, and About settings pages
+- Backup and restore for history, pins, categories, text shortcuts, and settings
+- Capture pause, image exclusion, retention policy, and sensitive-app exclusions
+- Dark, Light, and System themes; configurable history and thumbnail sizes
+- Selectable `Win + V`/`Win + C` panel hotkey and `Ctrl/Alt + 1…9` pinned shortcuts
+- GitHub Releases update checking
+- Automated x64/ARM64 builds, optional signing, and MSIX tooling
 
 ## Text expansion
 
@@ -115,7 +125,9 @@ The project follows [Semantic Versioning](https://semver.org/) using `MAJOR.MINO
 - `MINOR` for backward-compatible features
 - `PATCH` for backward-compatible fixes
 
-Current version: **1.1.1**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
+Current version: **1.3.0**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
+
+See [STORE-PUBLISHING.md](STORE-PUBLISHING.md) for packaging and Store submission instructions.
 
 ## Contributing
 

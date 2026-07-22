@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -12,12 +13,14 @@ using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
+using FlowDirection = System.Windows.FlowDirection;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace WinVClipboard;
 
 public partial class MainWindow : Window
 {
-    private const int MaxItems = 2000, WM_CLIPBOARDUPDATE = 0x031D, WH_KEYBOARD_LL = 13;
+    private const int WM_CLIPBOARDUPDATE = 0x031D, WH_KEYBOARD_LL = 13;
     private const int WM_KEYDOWN = 0x0100, WM_KEYUP = 0x0101, WM_SYSKEYDOWN = 0x0104, WM_SYSKEYUP = 0x0105;
     private const int VK_V = 0x56, VK_LWIN = 0x5B, VK_RWIN = 0x5C;
     private readonly ObservableCollection<ClipItem> _all = [], _filtered = [];
@@ -45,6 +48,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ApplyPanelSize(Localizer.CurrentPanelSize);
         ClipsList.ItemsSource = _filtered;
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinVClipboard");
         Directory.CreateDirectory(folder);
@@ -78,18 +82,20 @@ public partial class MainWindow : Window
 
     private void CaptureClipboard()
     {
+        if (Localizer.PauseCapture || IsForegroundProcessExcluded()) return;
         try
         {
             ClipItem? clip = null;
             var imageNeedsEncoding = false;
             if (Clipboard.ContainsFileDropList()) clip = ClipItem.FromFiles(Clipboard.GetFileDropList().Cast<string>().ToArray());
-            else if (Clipboard.ContainsImage() && Clipboard.GetImage() is { } image) { clip = ClipItem.FromImage(image); imageNeedsEncoding = true; }
+            else if (Localizer.CaptureImages && Clipboard.ContainsImage() && Clipboard.GetImage() is { } image) { clip = ClipItem.FromImage(image); imageNeedsEncoding = true; }
             else if (Clipboard.ContainsText() && Clipboard.GetText() is { Length: > 0 } text) clip = ClipItem.FromText(text);
             if (clip == null) return;
             var duplicate = _all.FirstOrDefault(x => x.Fingerprint == clip.Fingerprint);
             if (duplicate != null) { _all.Remove(duplicate); duplicate.CopiedAt = DateTime.Now; _all.Insert(0, duplicate); }
             else _all.Insert(0, clip);
-            while (_all.Count > MaxItems && _all.LastOrDefault(x => !x.IsPinned) is { } old) _all.Remove(old);
+            CleanupExpiredItems();
+            while (_all.Count > Localizer.MaxHistory && _all.LastOrDefault(x => !x.IsPinned) is { } old) _all.Remove(old);
             // Update the visible list before any image encoding or disk I/O.
             RefreshFilter();
             if (imageNeedsEncoding) _ = EncodeImageAndSaveAsync(clip);
@@ -97,6 +103,26 @@ public partial class MainWindow : Window
         }
         catch (COMException) { Dispatcher.BeginInvoke(CaptureClipboard, DispatcherPriority.ApplicationIdle); }
         catch { }
+    }
+
+    private bool IsForegroundProcessExcluded()
+    {
+        try
+        {
+            var excluded = Localizer.ExcludedApps.Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (excluded.Length == 0) return false;
+            var hwnd = GetForegroundWindow(); GetWindowThreadProcessId(hwnd, out var processId);
+            var name = System.Diagnostics.Process.GetProcessById((int)processId).ProcessName;
+            return excluded.Any(x => string.Equals(Path.GetFileNameWithoutExtension(x), name, StringComparison.OrdinalIgnoreCase));
+        }
+        catch { return false; }
+    }
+
+    private void CleanupExpiredItems()
+    {
+        if (Localizer.AutoDeleteDays <= 0) return;
+        var cutoff = DateTime.Now.AddDays(-Localizer.AutoDeleteDays);
+        foreach (var item in _all.Where(x => !x.IsPinned && x.CopiedAt < cutoff).ToList()) _all.Remove(item);
     }
 
     private async Task EncodeImageAndSaveAsync(ClipItem item)
@@ -119,12 +145,12 @@ public partial class MainWindow : Window
     {
         var query = SearchBox?.Text?.Trim() ?? "";
         var pinned = _all.Where(x => x.IsPinned).OrderByDescending(x => x.CopiedAt).ToList();
-        for (var i = 0; i < pinned.Count; i++) pinned[i].ShortcutLabel = i < 9 ? $"Ctrl+{i + 1}" : "";
+        for (var i = 0; i < pinned.Count; i++) pinned[i].ShortcutLabel = i < 9 ? $"{Localizer.PinnedModifier}+{i + 1}" : "";
         foreach (var item in _all.Where(x => !x.IsPinned)) item.ShortcutLabel = "";
         _filtered.Clear();
         foreach (var item in _all.Where(x => MatchesCategory(x) && (!_showPinnedOnly || x.IsPinned) && (query.Length == 0 || x.SearchText.Contains(query, StringComparison.CurrentCultureIgnoreCase))).OrderBy(x => x.IsPinned).ThenByDescending(x => x.CopiedAt)) _filtered.Add(item);
         if (EmptyState != null) EmptyState.Visibility = _filtered.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        if (CountText != null) CountText.Text = $"{_all.Count:N0} / {MaxItems:N0}";
+        if (CountText != null) CountText.Text = $"{_all.Count:N0} / {Localizer.MaxHistory:N0}";
         if (PinnedOnlyButton != null) { PinnedOnlyButton.Foreground = _showPinnedOnly ? System.Windows.Media.Brushes.DeepSkyBlue : System.Windows.Media.Brushes.White; PinnedOnlyButton.Content = "📌"; PinnedOnlyButton.ToolTip = Localizer.T(_showPinnedOnly ? "ShowAll" : "PinnedOnly"); }
         RefreshCategoryChips();
     }
@@ -182,17 +208,22 @@ public partial class MainWindow : Window
         var foreground = GetForegroundWindow();
         var ownWindow = new WindowInteropHelper(this).Handle;
         if (foreground != IntPtr.Zero && foreground != ownWindow) _pasteTarget = foreground;
+        Show();
+        PositionPanelAtMouse();
+        Activate(); SearchBox.Clear(); SearchBox.Focus();
+    }
+
+    private void PositionPanelAtMouse()
+    {
         GetCursorPos(out var cursor);
         var monitor = MonitorFromPoint(cursor, 2);
         var info = new MONITORINFO { size = (uint)Marshal.SizeOf<MONITORINFO>() };
         GetMonitorInfo(monitor, ref info);
-        Show();
         var hwnd = new WindowInteropHelper(this).Handle;
         GetWindowRect(hwnd, out var windowRect);
         var x = info.workArea.right - (windowRect.right - windowRect.left) - 22;
         var y = info.workArea.bottom - (windowRect.bottom - windowRect.top) - 22;
         SetWindowPos(hwnd, new IntPtr(-1), x, y, 0, 0, 0x0001 | 0x0010);
-        Activate(); SearchBox.Clear(); SearchBox.Focus();
     }
 
     private async void Paste(ClipItem item)
@@ -280,7 +311,8 @@ public partial class MainWindow : Window
 
             if (down && _pendingWinKey != 0)
             {
-                if (key == VK_V)
+                var showKey = Localizer.ShowHotkey == "Win+C" ? 0x43 : VK_V;
+                if (key == showKey)
                 {
                     _blockedV = true; _winVChord = true; _pendingWinKey = 0;
                     Dispatcher.BeginInvoke(ShowPanel);
@@ -289,8 +321,9 @@ public partial class MainWindow : Window
                 var pending = (byte)_pendingWinKey; _pendingWinKey = 0;
                 InjectKeyDown(pending); // Forward every other Win shortcut normally.
             }
-            if (key == VK_V && down && _winVChord) return new IntPtr(1);
-            if (key == VK_V && up && _blockedV) { _blockedV = false; return new IntPtr(1); }
+            var activeShowKey = Localizer.ShowHotkey == "Win+C" ? 0x43 : VK_V;
+            if (key == activeShowKey && down && _winVChord) return new IntPtr(1);
+            if (key == activeShowKey && up && _blockedV) { _blockedV = false; return new IntPtr(1); }
             if (down) DetectTypedKey(key, Marshal.ReadInt32(lParam, 4));
         }
         return CallNextHookEx(_keyboardHook, code, wParam, lParam);
@@ -428,7 +461,7 @@ public partial class MainWindow : Window
     }
     private void LoadHistory()
     {
-        try { if (File.Exists(_storePath)) foreach (var item in (JsonSerializer.Deserialize<List<ClipItem>>(File.ReadAllText(_storePath)) ?? []).Take(MaxItems)) _all.Add(item); } catch { }
+        try { if (File.Exists(_storePath)) foreach (var item in (JsonSerializer.Deserialize<List<ClipItem>>(File.ReadAllText(_storePath)) ?? []).Take(Localizer.MaxHistory)) _all.Add(item); CleanupExpiredItems(); } catch { }
     }
 
     private void LoadCategories()
@@ -482,7 +515,7 @@ public partial class MainWindow : Window
             e.Handled = true; _reallyExit = true; Close(); Application.Current.Shutdown();
         }
         else if (e.Key == Key.Escape) Hide();
-        else if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 && GetShortcutNumber(e.Key) is var number && number > 0)
+        else if (((Localizer.PinnedModifier == "Alt" && (Keyboard.Modifiers & ModifierKeys.Alt) != 0) || (Localizer.PinnedModifier != "Alt" && (Keyboard.Modifiers & ModifierKeys.Control) != 0)) && GetShortcutNumber(e.Key) is var number && number > 0)
         {
             var pinned = _all.Where(x => x.IsPinned).OrderByDescending(x => x.CopiedAt).ToList();
             if (number <= pinned.Count) { e.Handled = true; Paste(pinned[number - 1]); }
@@ -511,29 +544,63 @@ public partial class MainWindow : Window
         foreach (var item in _all) item.RefreshLocalizedText();
         RefreshFilter();
     }
-    private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    private void SettingsButton_Click(object sender, RoutedEventArgs e) => new SettingsWindow(this).ShowDialog();
+
+    private void ApplyPanelSize(PanelSize size)
     {
-        var menu = new System.Windows.Controls.ContextMenu
+        (Width, Height) = size switch
         {
-            PlacementTarget = (System.Windows.Controls.Button)sender,
-            FlowDirection = Localizer.Direction
+            PanelSize.Small => (360, 480),
+            PanelSize.Large => (520, 720),
+            _ => (430, 590)
         };
-        var language = new System.Windows.Controls.MenuItem { Header = $"🌐  {Localizer.T("SwitchLanguage")}" };
-        language.Click += LanguageButton_Click;
-        var shortcuts = new System.Windows.Controls.MenuItem { Header = $"⌨  {Localizer.T("TextShortcuts")}" };
-        shortcuts.Click += TextShortcutsButton_Click;
-        var clear = new System.Windows.Controls.MenuItem { Header = $"🧹  {Localizer.T("ClearUnpinned")}" };
-        clear.Click += ClearButton_Click;
-        var exit = new System.Windows.Controls.MenuItem { Header = $"⏻  {Localizer.T("ExitFull")}", Foreground = System.Windows.Media.Brushes.IndianRed };
-        exit.Click += ExitButton_Click;
-        menu.Items.Add(language);
-        menu.Items.Add(shortcuts);
-        menu.Items.Add(new System.Windows.Controls.Separator());
-        menu.Items.Add(clear);
-        menu.Items.Add(new System.Windows.Controls.Separator());
-        menu.Items.Add(exit);
-        menu.IsOpen = true;
     }
+    public void ApplySettings()
+    {
+        ApplyPanelSize(Localizer.CurrentPanelSize);
+        FlowDirection = Localizer.Direction;
+        foreach (var item in _all) item.RefreshLocalizedText();
+        CleanupExpiredItems();
+        while (_all.Count > Localizer.MaxHistory && _all.LastOrDefault(x => !x.IsPinned) is { } old) _all.Remove(old);
+        RefreshFilter();
+        Dispatcher.BeginInvoke(PositionPanelAtMouse, DispatcherPriority.Loaded);
+    }
+
+    public void ExportBackup()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog { Filter = "WinVClipboard backup (*.wvcbackup)|*.wvcbackup", FileName = $"WinVClipboard-{DateTime.Now:yyyyMMdd}.wvcbackup" };
+        if (dialog.ShowDialog(this) != true) return;
+        SaveHistoryImmediate(); SaveCategories(); SaveTextShortcuts(); Localizer.Save();
+        using var archive = ZipFile.Open(dialog.FileName, ZipArchiveMode.Create);
+        foreach (var path in new[] { _storePath, _categoriesPath, _textShortcutsPath, Localizer.SettingsFilePath })
+            if (File.Exists(path)) archive.CreateEntryFromFile(path, Path.GetFileName(path), CompressionLevel.Optimal);
+        MessageBox.Show(Localizer.T("BackupDone"), "WinVClipboard");
+    }
+
+    public void ImportBackup()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "WinVClipboard backup (*.wvcbackup)|*.wvcbackup" };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            using var archive = ZipFile.OpenRead(dialog.FileName);
+            var targets = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                [Path.GetFileName(_storePath)] = _storePath, [Path.GetFileName(_categoriesPath)] = _categoriesPath,
+                [Path.GetFileName(_textShortcutsPath)] = _textShortcutsPath, [Path.GetFileName(Localizer.SettingsFilePath)] = Localizer.SettingsFilePath
+            };
+            foreach (var entry in archive.Entries)
+                if (targets.TryGetValue(entry.Name, out var target)) { Directory.CreateDirectory(Path.GetDirectoryName(target)!); entry.ExtractToFile(target, true); }
+            MessageBox.Show($"{Localizer.T("RestoreDone")}\n{Localizer.T("RestartHint")}", "WinVClipboard");
+        }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "WinVClipboard", MessageBoxButton.OK, MessageBoxImage.Warning); }
+    }
+
+    public void ShowFromTray() => Dispatcher.BeginInvoke(ShowPanel);
+    public void OpenSettingsFromTray() => Dispatcher.BeginInvoke(() => { ShowPanel(); new SettingsWindow(this).ShowDialog(); });
+    public void OpenTextShortcutsFromSettings() => TextShortcutsButton_Click(this, new RoutedEventArgs());
+    public void ClearUnpinnedFromSettings() => ClearButton_Click(this, new RoutedEventArgs());
+    public void ExitFromTray() { _reallyExit = true; Close(); Application.Current.Shutdown(); }
     private void TextShortcutsButton_Click(object sender, RoutedEventArgs e)
     {
         List<TextShortcut> snapshot;
@@ -805,7 +872,7 @@ public sealed class ClipItem : INotifyPropertyChanged
         get
         {
             if (_thumbnail != null || Kind != ClipKind.Image || string.IsNullOrEmpty(ImageBase64)) return _thumbnail;
-            try { using var stream = new MemoryStream(Convert.FromBase64String(ImageBase64)); var image = new BitmapImage(); image.BeginInit(); image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = 320; image.StreamSource = stream; image.EndInit(); image.Freeze(); _thumbnail = image; } catch { }
+            try { using var stream = new MemoryStream(Convert.FromBase64String(ImageBase64)); var image = new BitmapImage(); image.BeginInit(); image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = Math.Max(120, Localizer.ThumbnailSize); image.StreamSource = stream; image.EndInit(); image.Freeze(); _thumbnail = image; } catch { }
             return _thumbnail;
         }
     }
