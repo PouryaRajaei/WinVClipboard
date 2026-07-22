@@ -27,9 +27,15 @@ public static class Localizer
         ["Theme"] = ("پوسته", "Theme"), ["Dark"] = ("تیره", "Dark"), ["Light"] = ("روشن", "Light"), ["System"] = ("سیستم", "System"),
         ["ThumbnailSize"] = ("اندازهٔ تصویر بندانگشتی", "Thumbnail size"),
         ["ShowHotkey"] = ("میانبر نمایش پنل", "Panel hotkey"), ["PinnedModifier"] = ("کلید پین‌های ۱ تا ۹", "Pinned items 1–9 modifier"),
+        ["HotkeyHint"] = ("روی کادر کلیک کنید و میانبر دلخواه را فشار دهید", "Click the box, then press your preferred shortcut"),
+        ["HotkeyRecording"] = ("در حال دریافت کلیدها...", "Listening for keys..."),
         ["ExportBackup"] = ("خروجی پشتیبان", "Export backup"), ["ImportBackup"] = ("بازیابی پشتیبان", "Import backup"),
+        ["BackupDescription"] = ("تاریخچه، پین‌ها، دسته‌ها، میانبرهای نوشتاری و تنظیمات را در یک فایل امن نگه دارید.", "Keep history, pins, categories, text shortcuts, and settings together in one backup file."),
         ["CheckUpdates"] = ("بررسی نسخهٔ جدید", "Check for updates"), ["UpToDate"] = ("آخرین نسخه نصب است.", "You are up to date."),
         ["UpdateAvailable"] = ("نسخهٔ جدید موجود است", "A new version is available"),
+        ["InstallUpdateQuestion"] = ("اکنون دانلود و نصب شود؟ برنامه خودکار دوباره باز می‌شود.", "Download and install now? The app will reopen automatically."),
+        ["UpdateFailed"] = ("به‌روزرسانی انجام نشد.", "The update could not be completed."),
+        ["UpdateAssetMissing"] = ("فایل مناسب معماری این دستگاه در Release پیدا نشد.", "No release asset was found for this device architecture."),
         ["BackupDone"] = ("فایل پشتیبان ذخیره شد.", "Backup saved."), ["RestoreDone"] = ("اطلاعات بازیابی شد.", "Backup restored."),
         ["RestartHint"] = ("برای اعمال کامل، برنامه را دوباره اجرا کنید.", "Restart the app to apply everything."),
         ["PinnedOnly"] = ("نمایش فقط موارد پین‌شده", "Show pinned items only"),
@@ -102,7 +108,7 @@ public static class Localizer
                 ExcludedApps = settings?.ExcludedApps ?? "";
                 Theme = settings?.Theme ?? "Dark";
                 ThumbnailSize = Math.Clamp(settings?.ThumbnailSize ?? 245, 100, 500);
-                ShowHotkey = settings?.ShowHotkey is "Win+C" ? "Win+C" : "Win+V";
+                ShowHotkey = string.IsNullOrWhiteSpace(settings?.ShowHotkey) ? "Win+V" : settings.ShowHotkey;
                 PinnedModifier = settings?.PinnedModifier is "Alt" ? "Alt" : "Ctrl";
             }
             else IsPersian = true;

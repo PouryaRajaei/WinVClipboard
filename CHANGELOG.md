@@ -8,6 +8,25 @@
 
 - بسته‌بندی و انتشار عمومی در Microsoft Store
 
+## [1.3.2] - 2026-07-22
+
+### Added
+
+- بررسی خودکار GitHub Releases هنگام اجرای برنامه با فاصلهٔ حداقل شش ساعت
+- انتخاب خودکار فایل Release متناسب با x64 یا ARM64
+- دانلود و نصب نسخهٔ جدید با updater مخفی
+- راه‌اندازی خودکار برنامه پس از جایگزینی فایل‌ها، بدون نیاز به خروج دستی کاربر
+- استفادهٔ مشترک از همین مسیر برای دکمهٔ بررسی آپدیت در صفحهٔ About
+
+## [1.3.1] - 2026-07-22
+
+### Changed
+
+- بازطراحی ظاهری کامل پنجرهٔ تنظیمات با کارت‌ها و رنگ‌بندی هماهنگ با پوسته
+- اصلاح خوانایی و محتوای صفحهٔ Backup در پوستهٔ روشن و تیره
+- جایگزینی فهرست محدود Hotkey با ضبط زندهٔ ترکیب دلخواه کاربر
+- ثبت میانبرهای عمومی سفارشی با Windows RegisterHotKey و حفظ مسیر ویژهٔ Win+V
+
 ## [1.3.0] - 2026-07-22
 
 ### Added
@@ -66,7 +85,9 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.1.0...v1.1.1

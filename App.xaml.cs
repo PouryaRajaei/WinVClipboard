@@ -18,6 +18,7 @@ public partial class App : Application
         InitializeTray();
         var startHidden = e.Args.Any(arg => arg.Equals("--startup", StringComparison.OrdinalIgnoreCase));
         _window.InitializeInBackground(showImmediately: !startHidden);
+        _ = UpdateService.CheckAtStartupAsync(_window);
     }
 
     private void InitializeTray()

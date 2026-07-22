@@ -20,7 +20,7 @@ namespace WinVClipboard;
 
 public partial class MainWindow : Window
 {
-    private const int WM_CLIPBOARDUPDATE = 0x031D, WH_KEYBOARD_LL = 13;
+    private const int WM_CLIPBOARDUPDATE = 0x031D, WM_HOTKEY = 0x0312, WH_KEYBOARD_LL = 13, PANEL_HOTKEY_ID = 0x4356;
     private const int WM_KEYDOWN = 0x0100, WM_KEYUP = 0x0101, WM_SYSKEYDOWN = 0x0104, WM_SYSKEYUP = 0x0105;
     private const int VK_V = 0x56, VK_LWIN = 0x5B, VK_RWIN = 0x5C;
     private readonly ObservableCollection<ClipItem> _all = [], _filtered = [];
@@ -42,7 +42,12 @@ public partial class MainWindow : Window
     private IntPtr _typingTarget;
     private TextSuggestionWindow? _suggestion;
     private TextShortcut? _activeShortcut;
+    private Action<Key, ModifierKeys>? _hotkeyCapture;
+    private int _blockedRecordingKey;
+    private bool _recordingWin;
     private bool _suppressCapture, _blockedV, _winVChord, _reallyExit, _showPinnedOnly;
+    private bool _useWinHookHotkey = true;
+    private string _lastWorkingHotkey = "Win+V";
     private static readonly UIntPtr InjectionMarker = new(0xC0D3);
 
     public MainWindow()
@@ -72,11 +77,13 @@ public partial class MainWindow : Window
         _source = (HwndSource)PresentationSource.FromVisual(this);
         _source.AddHook(WndProc);
         AddClipboardFormatListener(_source.Handle);
+        UpdateRegisteredHotkey(false);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_CLIPBOARDUPDATE && !_suppressCapture) Dispatcher.BeginInvoke(CaptureClipboard, DispatcherPriority.Background);
+        else if (msg == WM_HOTKEY && wParam.ToInt32() == PANEL_HOTKEY_ID) { Dispatcher.BeginInvoke(ShowPanel); handled = true; }
         return IntPtr.Zero;
     }
 
@@ -277,6 +284,25 @@ public partial class MainWindow : Window
                 return CallNextHookEx(_keyboardHook, code, wParam, lParam);
             var down = message is WM_KEYDOWN or WM_SYSKEYDOWN; var up = message is WM_KEYUP or WM_SYSKEYUP;
 
+            if (_hotkeyCapture != null)
+            {
+                var isModifier = key is 0x10 or 0x11 or 0x12 or 0xA0 or 0xA1 or 0xA2 or 0xA3 or 0xA4 or 0xA5;
+                if (key is VK_LWIN or VK_RWIN) { _recordingWin = down || (!up && _recordingWin); return new IntPtr(1); }
+                if (isModifier) return new IntPtr(1);
+                if (up && key == _blockedRecordingKey) { _blockedRecordingKey = 0; return new IntPtr(1); }
+                if (down)
+                {
+                    var modifiers = ModifierKeys.None;
+                    if ((GetAsyncKeyState(0x11) & 0x8000) != 0) modifiers |= ModifierKeys.Control;
+                    if ((GetAsyncKeyState(0x12) & 0x8000) != 0) modifiers |= ModifierKeys.Alt;
+                    if ((GetAsyncKeyState(0x10) & 0x8000) != 0) modifiers |= ModifierKeys.Shift;
+                    if (_recordingWin || (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0) modifiers |= ModifierKeys.Windows;
+                    _blockedRecordingKey = key;
+                    var callback = _hotkeyCapture; Dispatcher.BeginInvoke(() => callback?.Invoke(KeyInterop.KeyFromVirtualKey(key), modifiers));
+                    return new IntPtr(1);
+                }
+            }
+
             if (up && key == _blockedSuggestionKey) { _blockedSuggestionKey = 0; return new IntPtr(1); }
             if (down && _suggestion != null && (key == 0x09 || key == 0x1B))
             {
@@ -287,9 +313,10 @@ public partial class MainWindow : Window
             }
             if (down && _suggestion != null) Dispatcher.BeginInvoke(DismissTextSuggestion);
 
-            // Hold Win back until the next key reveals whether this is Win+V.
+            // Win+V/Win+C need the low-level path so Windows' own panel stays suppressed.
             if (key == VK_LWIN || key == VK_RWIN)
             {
+                if (!_useWinHookHotkey) return CallNextHookEx(_keyboardHook, code, wParam, lParam);
                 if (down)
                 {
                     if (_pendingWinKey == 0 && !_winVChord) _pendingWinKey = key;
@@ -311,7 +338,7 @@ public partial class MainWindow : Window
 
             if (down && _pendingWinKey != 0)
             {
-                var showKey = Localizer.ShowHotkey == "Win+C" ? 0x43 : VK_V;
+                var showKey = Localizer.ShowHotkey.Equals("Win+C", StringComparison.OrdinalIgnoreCase) ? 0x43 : VK_V;
                 if (key == showKey)
                 {
                     _blockedV = true; _winVChord = true; _pendingWinKey = 0;
@@ -321,7 +348,7 @@ public partial class MainWindow : Window
                 var pending = (byte)_pendingWinKey; _pendingWinKey = 0;
                 InjectKeyDown(pending); // Forward every other Win shortcut normally.
             }
-            var activeShowKey = Localizer.ShowHotkey == "Win+C" ? 0x43 : VK_V;
+            var activeShowKey = Localizer.ShowHotkey.Equals("Win+C", StringComparison.OrdinalIgnoreCase) ? 0x43 : VK_V;
             if (key == activeShowKey && down && _winVChord) return new IntPtr(1);
             if (key == activeShowKey && up && _blockedV) { _blockedV = false; return new IntPtr(1); }
             if (down) DetectTypedKey(key, Marshal.ReadInt32(lParam, 4));
@@ -501,6 +528,7 @@ public partial class MainWindow : Window
         ReleaseCtrlKeys();
         _pendingWinKey = 0; _winVChord = false;
         if (_source != null) RemoveClipboardFormatListener(_source.Handle);
+        if (_source != null) UnregisterHotKey(_source.Handle, PANEL_HOTKEY_ID);
         if (_hookThreadId != 0) PostThreadMessage(_hookThreadId, 0x0012, IntPtr.Zero, IntPtr.Zero);
         DismissTextSuggestion(); SaveHistoryImmediate(); SaveCategories(); SaveTextShortcuts(); base.OnClosing(e);
     }
@@ -563,7 +591,42 @@ public partial class MainWindow : Window
         CleanupExpiredItems();
         while (_all.Count > Localizer.MaxHistory && _all.LastOrDefault(x => !x.IsPinned) is { } old) _all.Remove(old);
         RefreshFilter();
+        UpdateRegisteredHotkey(true);
         Dispatcher.BeginInvoke(PositionPanelAtMouse, DispatcherPriority.Loaded);
+    }
+
+    private bool UpdateRegisteredHotkey(bool notifyFailure)
+    {
+        if (_source == null) return true;
+        UnregisterHotKey(_source.Handle, PANEL_HOTKEY_ID);
+        _useWinHookHotkey = Localizer.ShowHotkey.Equals("Win+V", StringComparison.OrdinalIgnoreCase) || Localizer.ShowHotkey.Equals("Win+C", StringComparison.OrdinalIgnoreCase);
+        if (_useWinHookHotkey) { _lastWorkingHotkey = Localizer.ShowHotkey; return true; }
+        if (!TryParseHotkey(Localizer.ShowHotkey, out var modifiers, out var key) || !RegisterHotKey(_source.Handle, PANEL_HOTKEY_ID, modifiers | 0x4000, key))
+        {
+            if (notifyFailure) MessageBox.Show(Localizer.IsPersian ? "این میانبر توسط برنامهٔ دیگری استفاده می‌شود یا معتبر نیست." : "This hotkey is invalid or already used by another application.", "WinVClipboard", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Localizer.ShowHotkey = _lastWorkingHotkey; Localizer.Save();
+            return false;
+        }
+        _lastWorkingHotkey = Localizer.ShowHotkey;
+        return true;
+    }
+
+    private static bool TryParseHotkey(string text, out uint modifiers, out uint virtualKey)
+    {
+        modifiers = 0; virtualKey = 0;
+        var parts = text.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length < 2) return false;
+        foreach (var part in parts[..^1])
+        {
+            if (part.Equals("Alt", StringComparison.OrdinalIgnoreCase)) modifiers |= 0x0001;
+            else if (part.Equals("Ctrl", StringComparison.OrdinalIgnoreCase) || part.Equals("Control", StringComparison.OrdinalIgnoreCase)) modifiers |= 0x0002;
+            else if (part.Equals("Shift", StringComparison.OrdinalIgnoreCase)) modifiers |= 0x0004;
+            else if (part.Equals("Win", StringComparison.OrdinalIgnoreCase) || part.Equals("Windows", StringComparison.OrdinalIgnoreCase)) modifiers |= 0x0008;
+            else return false;
+        }
+        if (!Enum.TryParse<Key>(parts[^1], true, out var key)) return false;
+        virtualKey = (uint)KeyInterop.VirtualKeyFromKey(key);
+        return modifiers != 0 && virtualKey != 0;
     }
 
     public void ExportBackup()
@@ -601,6 +664,9 @@ public partial class MainWindow : Window
     public void OpenTextShortcutsFromSettings() => TextShortcutsButton_Click(this, new RoutedEventArgs());
     public void ClearUnpinnedFromSettings() => ClearButton_Click(this, new RoutedEventArgs());
     public void ExitFromTray() { _reallyExit = true; Close(); Application.Current.Shutdown(); }
+    public void ExitForUpdate() { _reallyExit = true; Close(); Application.Current.Shutdown(); }
+    public void BeginHotkeyRecording(Action<Key, ModifierKeys> callback) { _hotkeyCapture = callback; _recordingWin = false; _blockedRecordingKey = 0; }
+    public void EndHotkeyRecording() { _hotkeyCapture = null; _recordingWin = false; _blockedRecordingKey = 0; }
     private void TextShortcutsButton_Click(object sender, RoutedEventArgs e)
     {
         List<TextShortcut> snapshot;
@@ -730,6 +796,8 @@ public partial class MainWindow : Window
 
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] private static extern bool AddClipboardFormatListener(IntPtr hwnd);
+    [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr hwnd, int id, uint modifiers, uint virtualKey);
+    [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hwnd, int id);
     [DllImport("user32.dll")] private static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hwnd);

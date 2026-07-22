@@ -38,8 +38,9 @@ Windows' built-in clipboard keeps a limited history and offers little organizati
 - Backup and restore for history, pins, categories, text shortcuts, and settings
 - Capture pause, image exclusion, retention policy, and sensitive-app exclusions
 - Dark, Light, and System themes; configurable history and thumbnail sizes
-- Selectable `Win + V`/`Win + C` panel hotkey and `Ctrl/Alt + 1…9` pinned shortcuts
+- Live recording of any supported global panel hotkey and selectable `Ctrl/Alt + 1…9` pinned shortcuts
 - GitHub Releases update checking
+- Seamless architecture-aware download, installation, and automatic relaunch
 - Automated x64/ARM64 builds, optional signing, and MSIX tooling
 
 ## Text expansion
@@ -125,7 +126,7 @@ The project follows [Semantic Versioning](https://semver.org/) using `MAJOR.MINO
 - `MINOR` for backward-compatible features
 - `PATCH` for backward-compatible fixes
 
-Current version: **1.3.0**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
+Current version: **1.3.2**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
 
 See [STORE-PUBLISHING.md](STORE-PUBLISHING.md) for packaging and Store submission instructions.
 
