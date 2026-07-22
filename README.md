@@ -128,7 +128,7 @@ dotnet publish -c Release -r win-arm64 --self-contained true -p:PublishSingleFil
 - `MINOR`: قابلیت جدید سازگار
 - `PATCH`: رفع باگ سازگار
 
-نسخهٔ فعلی: **1.3.2**. جزئیات هر نسخه در [CHANGELOG.md](CHANGELOG.md) ثبت می‌شود.
+نسخهٔ فعلی: **1.3.3**. جزئیات هر نسخه در [CHANGELOG.md](CHANGELOG.md) ثبت می‌شود.
 
 راهنمای بسته‌بندی و Store در [STORE-PUBLISHING.md](STORE-PUBLISHING.md) قرار دارد.
 

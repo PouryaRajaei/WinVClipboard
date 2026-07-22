@@ -8,6 +8,15 @@
 
 - بسته‌بندی و انتشار عمومی در Microsoft Store
 
+## [1.3.3] - 2026-07-22
+
+### Fixed
+
+- اصلاح تب سفید و نامرئی General در پنجرهٔ تنظیمات
+- جایگزینی ComboBoxهای سفید پیش‌فرض با قالب هماهنگ با Dark/Light theme
+- بهبود حالت انتخاب، Hover، فهرست بازشونده و کنتراست متن تنظیمات
+- اصلاح خوانایی کامل صفحهٔ Backup
+
 ## [1.3.2] - 2026-07-22
 
 ### Added
@@ -85,7 +94,8 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.2.0...v1.3.0

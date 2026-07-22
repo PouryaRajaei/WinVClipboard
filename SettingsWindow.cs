@@ -43,7 +43,7 @@ public sealed class SettingsWindow : Window
         var cancel = Button(Localizer.T("Cancel")); cancel.Click += (_, _) => Close(); actions.Children.Add(cancel); actions.Children.Add(save);
         DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
 
-        var tabs = new TabControl { Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = Primary() };
+        var tabs = new TabControl { Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = Primary(), ItemContainerStyle = (Style)Application.Current.Resources["SettingsTabStyle"] };
         var general = Panel();
         general.Children.Add(Label(Localizer.T("Language"))); _language = Combo(("فارسی", "fa"), ("English", "en")); Select(_language, Localizer.IsPersian ? "fa" : "en"); general.Children.Add(_language);
         _startup = Check(Localizer.T("StartWithWindows"), IsStartupEnabled());
@@ -140,7 +140,7 @@ public sealed class SettingsWindow : Window
     private static TextBox Input(string text) => new() { Text = text, Padding = new Thickness(11, 9, 11, 9), MaxWidth = 540, HorizontalAlignment = HorizontalAlignment.Stretch, Background = Card(), Foreground = Primary(), CaretBrush = Primary(), BorderBrush = new SolidColorBrush(Color.FromArgb(90, 95, 174, 255)), BorderThickness = new Thickness(1) };
     private static CheckBox Check(string text, bool value) => new() { Content = text, IsChecked = value, Margin = new Thickness(2, 9, 0, 9), Foreground = Primary() };
     private static Button Button(string text) => new() { Content = text, Padding = new Thickness(16, 9, 16, 9), Margin = new Thickness(5), Foreground = Primary(), Background = new SolidColorBrush(Color.FromArgb(60, 75, 145, 215)), BorderBrush = new SolidColorBrush(Color.FromArgb(100, 85, 165, 245)), BorderThickness = new Thickness(1) };
-    private static ComboBox Combo(params (string Label, string Value)[] values) { var box = new ComboBox { Padding = new Thickness(9), Background = Card(), Foreground = Primary(), BorderBrush = new SolidColorBrush(Color.FromArgb(90, 95, 174, 255)) }; foreach (var value in values) box.Items.Add(new ComboBoxItem { Content = value.Label, Tag = value.Value }); return box; }
+    private static ComboBox Combo(params (string Label, string Value)[] values) { var box = new ComboBox { Style = (Style)Application.Current.Resources["SettingsComboBoxStyle"] }; foreach (var value in values) box.Items.Add(new ComboBoxItem { Content = value.Label, Tag = value.Value }); return box; }
     private static Brush Primary() => (Brush)Application.Current.Resources["PrimaryTextBrush"];
     private static Brush Muted() => (Brush)Application.Current.Resources["MutedBrush"];
     private static Brush Card() => (Brush)Application.Current.Resources["CardBrush"];
