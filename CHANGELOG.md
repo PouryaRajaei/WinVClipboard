@@ -8,6 +8,31 @@
 
 - بسته‌بندی و انتشار عمومی در Microsoft Store
 
+## [1.4.0] - 2026-07-22
+
+### Added
+
+- تب مستقل Text Shortcuts در پنجرهٔ تنظیمات
+- افزودن Shortcut و Description از داخل تب
+- ویرایش مستقیم ردیف‌ها و حذف میانبر انتخاب‌شده
+- اعمال یک‌جای تغییرات Text Expansion با ذخیرهٔ تنظیمات
+
+## [1.3.5] - 2026-07-22
+
+### Fixed
+
+- اصلاح binding مقدار انتخاب‌شده و نمایش دوبارهٔ متن داخل ComboBoxهای تنظیمات
+
+## [1.3.4] - 2026-07-22
+
+### Fixed
+
+- سفیدشدن متن مقدار انتخاب‌شدهٔ ComboBoxها در پوستهٔ تیره
+
+### Added
+
+- دکمهٔ آیکنی حذف کل تاریخچه در نوار اصلی با پیام تأیید
+
 ## [1.3.3] - 2026-07-22
 
 ### Fixed
@@ -94,7 +119,10 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.3...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.5...v1.4.0
+[1.3.5]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.4...v1.3.5
+[1.3.4]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.0...v1.3.1

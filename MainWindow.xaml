@@ -11,7 +11,7 @@
      <TextBlock Text="▣" FontSize="21" Foreground="#FF7DB6FF" Margin="0,0,9,0"/><TextBlock Text="Clipboard" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}"/>
      <Border Background="#263A96DD" CornerRadius="10" Margin="9,1,0,0" Padding="7,2"><TextBlock x:Name="CountText" Foreground="#FFBBDDFF" FontSize="11"/></Border>
     </StackPanel>
-    <StackPanel Grid.Column="1" Orientation="Horizontal"><Button x:Name="PinnedOnlyButton" Content="📌" ToolTip="{DynamicResource PinnedOnly}" Click="PinnedOnlyButton_Click" FontSize="15"/><Button Content="⚙" ToolTip="{DynamicResource Settings}" Click="SettingsButton_Click" FontSize="17"/><Button Content="✕" ToolTip="{DynamicResource Hide}" Click="HideButton_Click" FontSize="14"/></StackPanel>
+    <StackPanel Grid.Column="1" Orientation="Horizontal"><Button x:Name="PinnedOnlyButton" Content="📌" ToolTip="{DynamicResource PinnedOnly}" Click="PinnedOnlyButton_Click" FontSize="15"/><Button Content="🧹" ToolTip="{DynamicResource ClearAll}" Click="ClearAllButton_Click" FontSize="15"/><Button Content="⚙" ToolTip="{DynamicResource Settings}" Click="SettingsButton_Click" FontSize="17"/><Button Content="✕" ToolTip="{DynamicResource Hide}" Click="HideButton_Click" FontSize="14"/></StackPanel>
    </Grid>
    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,9">
     <StackPanel x:Name="CategoriesPanel" Orientation="Horizontal"/>

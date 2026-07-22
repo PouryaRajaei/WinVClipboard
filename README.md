@@ -41,6 +41,7 @@
 - توقف موقت ثبت، عدم ذخیرهٔ تصویر، حذف خودکار و مستثناکردن برنامه‌های حساس
 - پوسته‌های تیره، روشن و System؛ تنظیم ظرفیت تاریخچه و اندازهٔ thumbnail
 - ضبط زندهٔ میانبر دلخواه نمایش پنل و انتخاب `Ctrl/Alt + 1…9` برای پین‌ها
+- تب مستقل مدیریت Text Shortcuts در تنظیمات با افزودن، ویرایش و حذف
 - بررسی نسخهٔ جدید از GitHub Releases
 - دانلود، نصب و اجرای خودکار نسخهٔ جدید بدون نیاز به خروج دستی کاربر
 - ساخت خودکار x64/ARM64 با GitHub Actions و زیرساخت امضا و MSIX
@@ -128,7 +129,7 @@ dotnet publish -c Release -r win-arm64 --self-contained true -p:PublishSingleFil
 - `MINOR`: قابلیت جدید سازگار
 - `PATCH`: رفع باگ سازگار
 
-نسخهٔ فعلی: **1.3.3**. جزئیات هر نسخه در [CHANGELOG.md](CHANGELOG.md) ثبت می‌شود.
+نسخهٔ فعلی: **1.4.0**. جزئیات هر نسخه در [CHANGELOG.md](CHANGELOG.md) ثبت می‌شود.
 
 راهنمای بسته‌بندی و Store در [STORE-PUBLISHING.md](STORE-PUBLISHING.md) قرار دارد.
 

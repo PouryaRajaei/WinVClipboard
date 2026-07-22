@@ -7,10 +7,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
+using System.Collections.ObjectModel;
 using Application = System.Windows.Application;
 using Button = System.Windows.Controls.Button;
 using CheckBox = System.Windows.Controls.CheckBox;
 using ComboBox = System.Windows.Controls.ComboBox;
+using DataGrid = System.Windows.Controls.DataGrid;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace WinVClipboard;
@@ -23,11 +25,15 @@ public sealed class SettingsWindow : Window
     private readonly CheckBox _startup, _pause, _images;
     private readonly TextBox _maxHistory, _days, _excluded, _hotkey;
     private readonly ComboBox _language, _size, _theme, _thumbnail, _pinnedModifier;
+    private readonly ObservableCollection<TextShortcut> _shortcutItems;
+    private readonly TextBox _shortcutTrigger, _shortcutDescription;
+    private readonly DataGrid _shortcutGrid;
     private string _capturedHotkey;
 
     public SettingsWindow(MainWindow main)
     {
         _main = main;
+        _shortcutItems = new ObservableCollection<TextShortcut>(_main.GetTextShortcuts());
         _capturedHotkey = Localizer.ShowHotkey;
         Title = Localizer.T("Settings"); Width = 720; Height = 620; MinWidth = 650; MinHeight = 540; WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Owner = main; ShowInTaskbar = false; Background = (Brush)Application.Current.Resources["PanelBrush"];
@@ -58,7 +64,6 @@ public sealed class SettingsWindow : Window
         _hotkey.LostKeyboardFocus += (_, _) => _main.EndHotkeyRecording();
         general.Children.Add(_hotkey); general.Children.Add(new TextBlock { Text = Localizer.T("HotkeyHint"), Foreground = Muted(), FontSize = 11, Margin = new Thickness(2, 5, 0, 8) });
         general.Children.Add(Label(Localizer.T("PinnedModifier"))); _pinnedModifier = Combo(("Ctrl + 1…9", "Ctrl"), ("Alt + 1…9", "Alt")); Select(_pinnedModifier, Localizer.PinnedModifier); general.Children.Add(_pinnedModifier);
-        var shortcuts = Button(Localizer.T("TextShortcuts")); shortcuts.Click += (_, _) => _main.OpenTextShortcutsFromSettings(); general.Children.Add(shortcuts);
         var clear = Button(Localizer.T("ClearUnpinned")); clear.Click += (_, _) => _main.ClearUnpinnedFromSettings(); general.Children.Add(clear);
         tabs.Items.Add(Tab(Localizer.T("General"), general));
 
@@ -73,6 +78,21 @@ public sealed class SettingsWindow : Window
         privacy.Children.Add(Label(Localizer.T("ExcludedApps"))); _excluded = Input(Localizer.ExcludedApps); _excluded.AcceptsReturn = true; _excluded.Height = 90; privacy.Children.Add(_excluded);
         tabs.Items.Add(Tab(Localizer.T("Privacy"), privacy));
 
+        var shortcutsPanel = Panel();
+        shortcutsPanel.Children.Add(new TextBlock { Text = Localizer.T("TextShortcutHint"), Foreground = Muted(), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 0, 0, 14) });
+        var shortcutEditor = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        shortcutEditor.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(155) }); shortcutEditor.ColumnDefinitions.Add(new ColumnDefinition()); shortcutEditor.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        _shortcutTrigger = Input(""); _shortcutTrigger.ToolTip = Localizer.T("TriggerTip"); _shortcutTrigger.FlowDirection = FlowDirection.LeftToRight;
+        _shortcutDescription = Input(""); _shortcutDescription.ToolTip = Localizer.T("DescriptionTip"); _shortcutDescription.Margin = new Thickness(8, 0, 8, 0);
+        var addShortcut = Button(Localizer.T("Add")); addShortcut.Click += AddShortcut_Click;
+        Grid.SetColumn(_shortcutTrigger, 0); Grid.SetColumn(_shortcutDescription, 1); Grid.SetColumn(addShortcut, 2); shortcutEditor.Children.Add(_shortcutTrigger); shortcutEditor.Children.Add(_shortcutDescription); shortcutEditor.Children.Add(addShortcut); shortcutsPanel.Children.Add(shortcutEditor);
+        _shortcutGrid = new DataGrid { ItemsSource = _shortcutItems, AutoGenerateColumns = false, CanUserAddRows = false, Height = 235, Background = Card(), Foreground = Primary(), RowBackground = Card(), AlternatingRowBackground = (Brush)Application.Current.Resources["HoverBrush"], GridLinesVisibility = DataGridGridLinesVisibility.Horizontal, BorderBrush = new SolidColorBrush(Color.FromArgb(80, 95, 174, 255)) };
+        _shortcutGrid.Columns.Add(new DataGridTextColumn { Header = Localizer.T("Shortcut"), Binding = new System.Windows.Data.Binding(nameof(TextShortcut.Trigger)), Width = new DataGridLength(155) });
+        _shortcutGrid.Columns.Add(new DataGridTextColumn { Header = Localizer.T("Description"), Binding = new System.Windows.Data.Binding(nameof(TextShortcut.Description)), Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
+        shortcutsPanel.Children.Add(_shortcutGrid);
+        var removeShortcut = Button(Localizer.T("RemoveSelected")); removeShortcut.HorizontalAlignment = HorizontalAlignment.Left; removeShortcut.Click += (_, _) => { if (_shortcutGrid.SelectedItem is TextShortcut item) _shortcutItems.Remove(item); }; shortcutsPanel.Children.Add(removeShortcut);
+        tabs.Items.Add(Tab(Localizer.T("TextShortcuts"), shortcutsPanel));
+
         var backup = Panel();
         backup.Children.Add(new TextBlock { Text = "☁", FontSize = 52, Foreground = new SolidColorBrush(Color.FromRgb(85, 175, 255)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 15, 0, 8) });
         backup.Children.Add(new TextBlock { Text = Localizer.T("BackupDescription"), Foreground = Primary(), TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, FontSize = 15, MaxWidth = 460, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 20) });
@@ -84,7 +104,12 @@ public sealed class SettingsWindow : Window
         var about = Panel();
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "";
         about.Children.Add(new TextBlock { Text = $"WinVClipboard  {version}", FontSize = 24, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 14) });
-        about.Children.Add(new TextBlock { Text = "Pourya Rajaei\nhttps://github.com/PouryaRajaei/WinVClipboard", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 18) });
+        about.Children.Add(new TextBlock { Text =
+            "Pourya Rajaei\n" +
+            "https://t.me/PouryaRajaei\n" +
+            "Tel: +989309483323\n" +
+            "Pourya.Rajaei@gmail.com\n" +
+            "https://github.com/PouryaRajaei/WinVClipboard", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 18) });
         var update = Button(Localizer.T("CheckUpdates")); update.Click += CheckUpdates_Click; about.Children.Add(update);
         tabs.Items.Add(Tab(Localizer.T("About"), about));
         root.Children.Add(tabs); Content = root;
@@ -102,7 +127,18 @@ public sealed class SettingsWindow : Window
         if (int.TryParse(Value(_thumbnail), out var thumbnail)) Localizer.ThumbnailSize = thumbnail;
         Localizer.ShowHotkey = _capturedHotkey; Localizer.PinnedModifier = Value(_pinnedModifier);
         if (Enum.TryParse<PanelSize>(Value(_size), out var panelSize)) Localizer.SetPanelSize(panelSize);
+        _shortcutGrid.CommitEdit(DataGridEditingUnit.Cell, true); _shortcutGrid.CommitEdit(DataGridEditingUnit.Row, true);
+        _main.SetTextShortcuts(_shortcutItems);
         Localizer.Save(); SetStartup(_startup.IsChecked == true); _main.ApplySettings(); Close();
+    }
+
+    private void AddShortcut_Click(object sender, RoutedEventArgs e)
+    {
+        var trigger = _shortcutTrigger.Text.Trim(); var description = _shortcutDescription.Text;
+        if (trigger.Length < 2 || description.Length == 0) { _shortcutTrigger.Focus(); return; }
+        var existing = _shortcutItems.FirstOrDefault(x => x.Trigger.Equals(trigger, StringComparison.OrdinalIgnoreCase));
+        if (existing != null) existing.Description = description; else _shortcutItems.Add(new TextShortcut { Trigger = trigger, Description = description });
+        _shortcutTrigger.Clear(); _shortcutDescription.Clear(); _shortcutTrigger.Focus();
     }
 
     private void HotkeyRecorded(Key key, ModifierKeys modifiers)

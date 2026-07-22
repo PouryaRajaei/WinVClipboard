@@ -662,6 +662,16 @@ public partial class MainWindow : Window
     public void ShowFromTray() => Dispatcher.BeginInvoke(ShowPanel);
     public void OpenSettingsFromTray() => Dispatcher.BeginInvoke(() => { ShowPanel(); new SettingsWindow(this).ShowDialog(); });
     public void OpenTextShortcutsFromSettings() => TextShortcutsButton_Click(this, new RoutedEventArgs());
+    public IReadOnlyList<TextShortcut> GetTextShortcuts() { lock (_shortcutLock) return _textShortcuts.Select(x => new TextShortcut { Trigger = x.Trigger, Description = x.Description }).ToList(); }
+    public void SetTextShortcuts(IEnumerable<TextShortcut> items)
+    {
+        lock (_shortcutLock)
+        {
+            _textShortcuts.Clear();
+            _textShortcuts.AddRange(items.Where(x => x.Trigger.Trim().Length > 1 && x.Description.Length > 0).Select(x => new TextShortcut { Trigger = x.Trigger.Trim(), Description = x.Description }));
+        }
+        SaveTextShortcuts(); _typedBuffer.Clear();
+    }
     public void ClearUnpinnedFromSettings() => ClearButton_Click(this, new RoutedEventArgs());
     public void ExitFromTray() { _reallyExit = true; Close(); Application.Current.Shutdown(); }
     public void ExitForUpdate() { _reallyExit = true; Close(); Application.Current.Shutdown(); }
@@ -744,6 +754,11 @@ public partial class MainWindow : Window
     }
     private void DeleteButton_Click(object sender, RoutedEventArgs e) { if (((FrameworkElement)sender).Tag is ClipItem item) { _all.Remove(item); SaveHistory(); RefreshFilter(); } }
     private void ClearButton_Click(object sender, RoutedEventArgs e) { foreach (var item in _all.Where(x => !x.IsPinned).ToList()) _all.Remove(item); SaveHistory(); RefreshFilter(); }
+    private void ClearAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (MessageBox.Show(Localizer.T("ClearAllConfirm"), "WinVClipboard", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        _all.Clear(); SaveHistory(); RefreshFilter();
+    }
     private void ExitButton_Click(object sender, RoutedEventArgs e) { _reallyExit = true; Close(); Application.Current.Shutdown(); }
 
     private static int GetShortcutNumber(Key key) => key switch

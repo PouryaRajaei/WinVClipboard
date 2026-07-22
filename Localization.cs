@@ -42,6 +42,8 @@ public static class Localizer
         ["ShowAll"] = ("نمایش همهٔ موارد", "Show all items"),
         ["Clear"] = ("پاک‌کردن", "Clear"),
         ["ClearUnpinned"] = ("حذف موارد پین‌نشده", "Delete unpinned items"),
+        ["ClearAll"] = ("حذف همهٔ موارد", "Delete all items"),
+        ["ClearAllConfirm"] = ("همهٔ موارد کلیپ‌بورد، شامل موارد پین‌شده، حذف شوند؟", "Delete the entire clipboard history, including pinned items?"),
         ["Exit"] = ("⏻ خروج", "⏻ Exit"),
         ["ExitFull"] = ("خروج از برنامه", "Exit application"),
         ["ExitTip"] = ("بستن کامل برنامه", "Exit the application completely"),
