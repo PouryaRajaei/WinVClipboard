@@ -602,6 +602,11 @@ public partial class MainWindow : Window
         {
             e.Handled = true; _reallyExit = true; Close(); Application.Current.Shutdown();
         }
+        else if (e.Key == Key.Escape && ClearConfirmOverlay.Visibility == Visibility.Visible)
+        {
+            e.Handled = true;
+            ClearConfirmOverlay.Visibility = Visibility.Collapsed;
+        }
         else if (e.Key == Key.Escape) Hide();
         else if (((Localizer.PinnedModifier == "Alt" && (Keyboard.Modifiers & ModifierKeys.Alt) != 0) || (Localizer.PinnedModifier != "Alt" && (Keyboard.Modifiers & ModifierKeys.Control) != 0)) && GetShortcutNumber(e.Key) is var number && number > 0)
         {
@@ -836,7 +841,16 @@ public partial class MainWindow : Window
     private void ClearButton_Click(object sender, RoutedEventArgs e) { foreach (var item in _all.Where(x => !x.IsPinned).ToList()) _all.Remove(item); SaveHistory(); RefreshFilter(); }
     private void ClearAllButton_Click(object sender, RoutedEventArgs e)
     {
-        if (MessageBox.Show(Localizer.T("ClearAllConfirm"), "WinVClipboard", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        ClearConfirmOverlay.Visibility = Visibility.Visible;
+        ClearConfirmOverlay.Focus();
+    }
+    private void CancelClearAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        ClearConfirmOverlay.Visibility = Visibility.Collapsed;
+    }
+    private void ConfirmClearAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        ClearConfirmOverlay.Visibility = Visibility.Collapsed;
         _all.Clear(); SaveHistory(); RefreshFilter();
     }
     private void ExitButton_Click(object sender, RoutedEventArgs e) { _reallyExit = true; Close(); Application.Current.Shutdown(); }

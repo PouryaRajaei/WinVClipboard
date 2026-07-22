@@ -37,6 +37,18 @@
     <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock Text="▣" Foreground="#667DB6FF" FontSize="42" HorizontalAlignment="Center"/><TextBlock Text="{DynamicResource Empty}" Foreground="{StaticResource MutedBrush}" Margin="0,10,0,0"/></StackPanel>
    </Grid>
    <Grid Grid.Row="4" Margin="3,9,3,0"><TextBlock Text="{DynamicResource Footer}" Foreground="#FF8C8C8C" FontSize="10.5" HorizontalAlignment="Center"/></Grid>
+   <Grid x:Name="ClearConfirmOverlay" Grid.RowSpan="5" Panel.ZIndex="100" Visibility="Collapsed" Background="#B0121212">
+    <Border Width="340" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource CardBrush}" BorderBrush="#665FAEFF" BorderThickness="1" CornerRadius="13" Padding="20">
+     <StackPanel>
+      <TextBlock Text="{DynamicResource ClearAll}" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+      <TextBlock Text="{DynamicResource ClearAllConfirm}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" FontSize="13" LineHeight="20" Margin="0,0,0,18"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+       <Button Content="{DynamicResource Cancel}" Click="CancelClearAllButton_Click" Background="#334F5B66" Foreground="White" Padding="16,8" Margin="0,0,8,0"/>
+       <Button Content="{DynamicResource ClearAll}" Click="ConfirmClearAllButton_Click" Background="#FFD84A4A" Foreground="White" Padding="16,8"/>
+      </StackPanel>
+     </StackPanel>
+    </Border>
+   </Grid>
   </Grid>
  </Border>
 </Window>

@@ -2,7 +2,7 @@ param(
     [ValidateSet('win-x64','win-arm64')][string]$Runtime = 'win-x64',
     [Parameter(Mandatory)][string]$Publisher,
     [string]$IdentityName = 'PouryaRajaei.WinVClipboard',
-    [string]$Version = '1.5.12.0',
+    [string]$Version = '1.5.13.0',
     [string]$Output = 'artifacts'
 )
 

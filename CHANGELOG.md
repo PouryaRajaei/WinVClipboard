@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [1.5.13] - 2026-07-22
+
+### Changed
+
+- تأیید حذف همه موارد به‌جای MessageBox ویندوز داخل خود پنل نمایش داده می‌شود و باعث بسته‌شدن پنل نمی‌شود.
+- The delete-all confirmation is now shown inside the panel instead of a Windows MessageBox, keeping the panel open.
+
 ## [1.5.12] - 2026-07-22
 
 ### Fixed
@@ -215,7 +222,8 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.12...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.13...HEAD
+[1.5.13]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.12...v1.5.13
 [1.5.12]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.11...v1.5.12
 [1.5.11]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.10...v1.5.11
 [1.5.10]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.9...v1.5.10

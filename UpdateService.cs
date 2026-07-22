@@ -32,7 +32,7 @@ public static class UpdateService
         if (_checking) return; _checking = true;
         try
         {
-            using var client = new HttpClient(); client.DefaultRequestHeaders.UserAgent.ParseAdd("WinVClipboard/1.5.12");
+            using var client = new HttpClient(); client.DefaultRequestHeaders.UserAgent.ParseAdd("WinVClipboard/1.5.13");
             var json = await client.GetStringAsync(ReleasesApi);
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
