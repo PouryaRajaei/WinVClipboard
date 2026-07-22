@@ -4,9 +4,10 @@ A fast, native Windows clipboard manager with the familiar `Win + V` experience,
 
 [فارسی](README.md) · [Changelog](CHANGELOG.md) · [Download latest release](https://github.com/PouryaRajaei/WinVClipboard/releases/latest)
 
-![WinVClipboard](Assets/WinVClipboard-transparent.png)
 
 ![WinVClipboard panel](docs/screenshots/clipboard-panel.png)
+
+![WinVClipboard settings](docs/screenshots/clipboard-panel2.png)
 
 ## Why WinVClipboard?
 

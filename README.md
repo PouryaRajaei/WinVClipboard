@@ -6,9 +6,10 @@
 
 [English](README.en.md) · [تغییرات نسخه‌ها](CHANGELOG.md) · [دریافت آخرین نسخه](https://github.com/PouryaRajaei/WinVClipboard/releases/latest)
 
-![WinVClipboard](Assets/WinVClipboard-transparent.png)
 
 ![نمای پنل WinVClipboard](docs/screenshots/clipboard-panel.png)
+
+![نمای تنظیمات WinVClipboard](docs/screenshots/clipboard-panel2.png)
 
 ## چرا WinVClipboard؟
 
