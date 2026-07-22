@@ -9,6 +9,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Localizer.Initialize();
         _singleInstance = new Mutex(true, "WinVClipboard.SingleInstance.4F1C58D2", out var isFirst);
         if (!isFirst) { Shutdown(); return; }
         _window = new MainWindow();

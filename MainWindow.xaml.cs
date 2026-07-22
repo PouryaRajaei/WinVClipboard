@@ -125,7 +125,7 @@ public partial class MainWindow : Window
         foreach (var item in _all.Where(x => MatchesCategory(x) && (!_showPinnedOnly || x.IsPinned) && (query.Length == 0 || x.SearchText.Contains(query, StringComparison.CurrentCultureIgnoreCase))).OrderBy(x => x.IsPinned).ThenByDescending(x => x.CopiedAt)) _filtered.Add(item);
         if (EmptyState != null) EmptyState.Visibility = _filtered.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         if (CountText != null) CountText.Text = $"{_all.Count:N0} / {MaxItems:N0}";
-        if (PinnedOnlyButton != null) { PinnedOnlyButton.Foreground = _showPinnedOnly ? System.Windows.Media.Brushes.DeepSkyBlue : System.Windows.Media.Brushes.White; PinnedOnlyButton.Content = "📌"; PinnedOnlyButton.ToolTip = _showPinnedOnly ? "نمایش همهٔ موارد" : "نمایش فقط موارد پین‌شده"; }
+        if (PinnedOnlyButton != null) { PinnedOnlyButton.Foreground = _showPinnedOnly ? System.Windows.Media.Brushes.DeepSkyBlue : System.Windows.Media.Brushes.White; PinnedOnlyButton.Content = "📌"; PinnedOnlyButton.ToolTip = Localizer.T(_showPinnedOnly ? "ShowAll" : "PinnedOnly"); }
         RefreshCategoryChips();
     }
 
@@ -141,10 +141,10 @@ public partial class MainWindow : Window
     {
         if (CategoriesPanel == null) return;
         CategoriesPanel.Children.Clear();
-        AddCategoryChip("همه", null, "ViewGrid", false);
-        AddCategoryChip("بدون دسته", UncategorizedFilter, "TagOff", false);
+        AddCategoryChip(Localizer.T("All"), null, "ViewGrid", false);
+        AddCategoryChip(Localizer.T("Uncategorized"), UncategorizedFilter, "TagOff", false);
         foreach (var category in _categories.OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase)) AddCategoryChip(category.Name, category.Name, category.IconKind, true);
-        var add = new System.Windows.Controls.Button { Content = MakeMaterialIcon("Plus", 18), ToolTip = "دستهٔ جدید", Tag = "__ADD__", Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(9, 5, 9, 5) };
+        var add = new System.Windows.Controls.Button { Content = MakeMaterialIcon("Plus", 18), ToolTip = Localizer.T("NewCategory"), Tag = "__ADD__", Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(9, 5, 9, 5) };
         add.Click += CategoryChip_Click; CategoriesPanel.Children.Add(add);
     }
 
@@ -161,9 +161,9 @@ public partial class MainWindow : Window
         if (deletable)
         {
             var menu = new System.Windows.Controls.ContextMenu();
-            var edit = new System.Windows.Controls.MenuItem { Header = "ویرایش نام و آیکن", Tag = value };
+            var edit = new System.Windows.Controls.MenuItem { Header = Localizer.T("EditCategory"), Tag = value };
             edit.Click += EditCategory_Click; menu.Items.Add(edit);
-            var remove = new System.Windows.Controls.MenuItem { Header = "حذف دسته", Tag = value };
+            var remove = new System.Windows.Controls.MenuItem { Header = Localizer.T("DeleteCategory"), Tag = value };
             remove.Click += DeleteCategory_Click; menu.Items.Add(remove); chip.ContextMenu = menu;
         }
         CategoriesPanel.Children.Add(chip);
@@ -218,7 +218,7 @@ public partial class MainWindow : Window
             SendCtrlV();
             await Task.Delay(250);
         }
-        catch (Exception ex) { MessageBox.Show($"امکان چسباندن این مورد نبود.\n{ex.Message}", "Win+V Clipboard", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        catch (Exception ex) { MessageBox.Show($"{Localizer.T("PasteError")}\n{ex.Message}", "Win+V Clipboard", MessageBoxButton.OK, MessageBoxImage.Warning); }
         finally { _suppressCapture = false; }
     }
 
@@ -229,7 +229,7 @@ public partial class MainWindow : Window
         {
             _hookThreadId = GetCurrentThreadId();
             _keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, _keyboardProc, GetModuleHandle(null), 0);
-            if (_keyboardHook == IntPtr.Zero) Dispatcher.BeginInvoke(() => MessageBox.Show("رهگیری Win+V فعال نشد. برنامه را با دسترسی Administrator اجرا کنید.", "Win+V Clipboard"));
+            if (_keyboardHook == IntPtr.Zero) Dispatcher.BeginInvoke(() => MessageBox.Show(Localizer.T("HookError"), "Win+V Clipboard"));
             while (GetMessage(out var message, IntPtr.Zero, 0, 0) > 0) { }
             if (_keyboardHook != IntPtr.Zero) UnhookWindowsHookEx(_keyboardHook);
         }) { IsBackground = true, Name = "WinV Hotkey Hook" };
@@ -504,6 +504,36 @@ public partial class MainWindow : Window
     private void ClipsList_MouseDoubleClick(object sender, MouseButtonEventArgs e) { if (ClipsList.SelectedItem is ClipItem item) Paste(item); }
     private void PinButton_Click(object sender, RoutedEventArgs e) { if (((FrameworkElement)sender).Tag is ClipItem item) { item.IsPinned = !item.IsPinned; SaveHistory(); RefreshFilter(); } }
     private void PinnedOnlyButton_Click(object sender, RoutedEventArgs e) { _showPinnedOnly = !_showPinnedOnly; RefreshFilter(); }
+    private void LanguageButton_Click(object sender, RoutedEventArgs e)
+    {
+        Localizer.Toggle();
+        FlowDirection = Localizer.Direction;
+        foreach (var item in _all) item.RefreshLocalizedText();
+        RefreshFilter();
+    }
+    private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var menu = new System.Windows.Controls.ContextMenu
+        {
+            PlacementTarget = (System.Windows.Controls.Button)sender,
+            FlowDirection = Localizer.Direction
+        };
+        var language = new System.Windows.Controls.MenuItem { Header = $"🌐  {Localizer.T("SwitchLanguage")}" };
+        language.Click += LanguageButton_Click;
+        var shortcuts = new System.Windows.Controls.MenuItem { Header = $"⌨  {Localizer.T("TextShortcuts")}" };
+        shortcuts.Click += TextShortcutsButton_Click;
+        var clear = new System.Windows.Controls.MenuItem { Header = $"🧹  {Localizer.T("ClearUnpinned")}" };
+        clear.Click += ClearButton_Click;
+        var exit = new System.Windows.Controls.MenuItem { Header = $"⏻  {Localizer.T("ExitFull")}", Foreground = System.Windows.Media.Brushes.IndianRed };
+        exit.Click += ExitButton_Click;
+        menu.Items.Add(language);
+        menu.Items.Add(shortcuts);
+        menu.Items.Add(new System.Windows.Controls.Separator());
+        menu.Items.Add(clear);
+        menu.Items.Add(new System.Windows.Controls.Separator());
+        menu.Items.Add(exit);
+        menu.IsOpen = true;
+    }
     private void TextShortcutsButton_Click(object sender, RoutedEventArgs e)
     {
         List<TextShortcut> snapshot;
@@ -551,9 +581,9 @@ public partial class MainWindow : Window
             choice.Click += (_, _) => { item.Category = category.Name; SaveHistory(); RefreshFilter(); }; menu.Items.Add(choice);
         }
         if (_categories.Count > 0) menu.Items.Add(new System.Windows.Controls.Separator());
-        var none = new System.Windows.Controls.MenuItem { Header = "بدون دسته" };
+        var none = new System.Windows.Controls.MenuItem { Header = Localizer.T("Uncategorized") };
         none.Click += (_, _) => { item.Category = ""; SaveHistory(); RefreshFilter(); }; menu.Items.Add(none);
-        var create = new System.Windows.Controls.MenuItem { Header = "＋ دستهٔ جدید..." };
+        var create = new System.Windows.Controls.MenuItem { Header = Localizer.T("NewCategoryMenu") };
         create.Click += (_, _) => CreateCategory(item); menu.Items.Add(create);
         menu.IsOpen = true;
     }
@@ -706,9 +736,9 @@ public sealed class CategoryEditorDialog : Window
     public CategoryEditorDialog(string name = "", string iconKind = "Folder")
     {
         _selectedIcon = iconKind;
-        Title = "دسته‌بندی"; Width = 430; Height = 430; WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Title = Localizer.T("CategoryDialog"); Width = 430; Height = 430; WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 30, 30));
-        Foreground = System.Windows.Media.Brushes.White; FlowDirection = FlowDirection.RightToLeft;
+        Foreground = System.Windows.Media.Brushes.White; FlowDirection = Localizer.Direction;
 
         var root = new System.Windows.Controls.Grid { Margin = new Thickness(18) };
         root.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
@@ -716,9 +746,9 @@ public sealed class CategoryEditorDialog : Window
         root.RowDefinitions.Add(new System.Windows.Controls.RowDefinition());
         root.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
 
-        var title = new System.Windows.Controls.TextBlock { Text = "نام و آیکن دسته", FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 12) };
+        var title = new System.Windows.Controls.TextBlock { Text = Localizer.T("CategoryNameIcon"), FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 12) };
         System.Windows.Controls.Grid.SetRow(title, 0); root.Children.Add(title);
-        _nameBox = new System.Windows.Controls.TextBox { Text = name, FontSize = 14, Padding = new Thickness(10, 8, 10, 8), Margin = new Thickness(0, 0, 0, 14), FlowDirection = FlowDirection.RightToLeft };
+        _nameBox = new System.Windows.Controls.TextBox { Text = name, FontSize = 14, Padding = new Thickness(10, 8, 10, 8), Margin = new Thickness(0, 0, 0, 14), FlowDirection = Localizer.Direction };
         System.Windows.Controls.Grid.SetRow(_nameBox, 1); root.Children.Add(_nameBox);
 
         var icons = new System.Windows.Controls.WrapPanel { FlowDirection = FlowDirection.LeftToRight };
@@ -732,9 +762,9 @@ public sealed class CategoryEditorDialog : Window
         System.Windows.Controls.Grid.SetRow(scroll, 2); root.Children.Add(scroll);
 
         var actions = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 12, 0, 0) };
-        var save = new System.Windows.Controls.Button { Content = "ذخیره", Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(42, 112, 180)), Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(6, 0, 0, 0) };
+        var save = new System.Windows.Controls.Button { Content = Localizer.T("Save"), Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(42, 112, 180)), Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(6, 0, 0, 0) };
         save.Click += (_, _) => Save();
-        var cancel = new System.Windows.Controls.Button { Content = "انصراف", Padding = new Thickness(18, 7, 18, 7) }; cancel.Click += (_, _) => { DialogResult = false; Close(); };
+        var cancel = new System.Windows.Controls.Button { Content = Localizer.T("Cancel"), Padding = new Thickness(18, 7, 18, 7) }; cancel.Click += (_, _) => { DialogResult = false; Close(); };
         actions.Children.Add(save); actions.Children.Add(cancel); System.Windows.Controls.Grid.SetRow(actions, 3); root.Children.Add(actions);
         Content = root;
         Loaded += (_, _) => { UpdateIconSelection(); _nameBox.Focus(); _nameBox.SelectAll(); };
@@ -767,7 +797,7 @@ public sealed class ClipItem : INotifyPropertyChanged
     public Guid Id { get; set; } = Guid.NewGuid(); public ClipKind Kind { get; set; } public string? Text { get; set; } public string? ImageBase64 { get; set; } public string[]? Files { get; set; } public DateTime CopiedAt { get; set; } = DateTime.Now;
     public bool IsPinned { get => _isPinned; set { _isPinned = value; Changed(); Changed(nameof(PinGlyph)); Changed(nameof(Details)); Changed(nameof(CategoryVisibility)); } }
     public string Category { get => _category; set { _category = value ?? ""; Changed(); Changed(nameof(CategoryLabel)); Changed(nameof(Details)); } }
-    [JsonIgnore] public string CategoryLabel => string.IsNullOrWhiteSpace(Category) ? "دسته" : Category;
+    [JsonIgnore] public string CategoryLabel => string.IsNullOrWhiteSpace(Category) ? Localizer.T("Category") : Category;
     [JsonIgnore] public Visibility CategoryVisibility => IsPinned ? Visibility.Visible : Visibility.Collapsed;
     [JsonIgnore] public string ShortcutLabel { get => _shortcutLabel; set { if (_shortcutLabel == value) return; _shortcutLabel = value; Changed(); Changed(nameof(Details)); } }
     [JsonIgnore] public BitmapSource? Thumbnail
@@ -793,8 +823,8 @@ public sealed class ClipItem : INotifyPropertyChanged
             return FlowDirection.LeftToRight;
         }
     }
-    public string Preview => Kind switch { ClipKind.Text => (Text ?? "").Replace("\r", " ").Replace("\n", " "), ClipKind.Image => "تصویر ذخیره‌شده", ClipKind.Files => string.Join("، ", (Files ?? []).Select(Path.GetFileName)), _ => "" };
-    public string Details => $"{(IsPinned ? $"پین‌شده{(string.IsNullOrWhiteSpace(Category) ? "" : $" • {Category}")}{(ShortcutLabel.Length > 0 ? $" ({ShortcutLabel})" : "")} • " : "")}{Kind switch { ClipKind.Text => "متن", ClipKind.Image => "تصویر", _ => $"{Files?.Length ?? 0} فایل" }} • {CopiedAt:yyyy/MM/dd HH:mm}";
+    public string Preview => Kind switch { ClipKind.Text => (Text ?? "").Replace("\r", " ").Replace("\n", " "), ClipKind.Image => Localizer.T("SavedImage"), ClipKind.Files => string.Join(Localizer.IsPersian ? "، " : ", ", (Files ?? []).Select(Path.GetFileName)), _ => "" };
+    public string Details => $"{(IsPinned ? $"{Localizer.T("Pinned")}{(string.IsNullOrWhiteSpace(Category) ? "" : $" • {Category}")}{(ShortcutLabel.Length > 0 ? $" ({ShortcutLabel})" : "")} • " : "")}{Kind switch { ClipKind.Text => Localizer.T("Text"), ClipKind.Image => Localizer.T("Image"), _ => $"{Files?.Length ?? 0} {Localizer.T((Files?.Length ?? 0) == 1 ? "File" : "Files")}" }} • {CopiedAt:yyyy/MM/dd HH:mm}";
     public string SearchText => Kind == ClipKind.Text ? Text ?? "" : string.Join(" ", Files ?? []);
     public string Fingerprint => Kind switch { ClipKind.Text => "T:" + Text, ClipKind.Image => "I:" + (ImageBase64?.GetHashCode() ?? 0), _ => "F:" + string.Join("|", Files ?? []) };
     public static ClipItem FromText(string text) => new() { Kind = ClipKind.Text, Text = text };
@@ -804,5 +834,6 @@ public sealed class ClipItem : INotifyPropertyChanged
         var frozen = image.Clone(); frozen.Freeze();
         return new ClipItem { Kind = ClipKind.Image, LiveImage = frozen, _thumbnail = frozen };
     }
+    public void RefreshLocalizedText() { Changed(nameof(CategoryLabel)); Changed(nameof(Preview)); Changed(nameof(Details)); Changed(nameof(TextFlowDirection)); }
     public event PropertyChangedEventHandler? PropertyChanged; private void Changed([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

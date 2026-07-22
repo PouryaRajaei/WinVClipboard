@@ -8,7 +8,15 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>WinVClipboard</AssemblyName>
     <Product>Win+V Clipboard</Product>
-    <Version>1.0.0</Version>
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
+    <InformationalVersion>1.1.1</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Authors>Pourya Rajaei</Authors>
+    <Description>A fast Windows clipboard manager with extended history, pins, categories, image thumbnails, and text expansion.</Description>
+    <RepositoryUrl>https://github.com/PouryaRajaei/WinVClipboard</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <ApplicationIcon>Assets\WinVClipboard.ico</ApplicationIcon>
   </PropertyGroup>
 
