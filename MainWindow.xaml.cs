@@ -86,7 +86,7 @@ public partial class MainWindow : Window
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_CLIPBOARDUPDATE && !_suppressCapture) Dispatcher.BeginInvoke(CaptureClipboard, DispatcherPriority.Background);
-        else if (msg == WM_HOTKEY && wParam.ToInt32() == PANEL_HOTKEY_ID) { Dispatcher.BeginInvoke(ShowPanel); handled = true; }
+        else if (msg == WM_HOTKEY && wParam.ToInt32() == PANEL_HOTKEY_ID) { Dispatcher.BeginInvoke(ShowDefaultPanel); handled = true; }
         else if (msg == WM_HOTKEY && _categoryHotkeyMap.TryGetValue(wParam.ToInt32(), out var category)) { Dispatcher.BeginInvoke(() => ShowCategory(category)); handled = true; }
         return IntPtr.Zero;
     }
@@ -358,7 +358,7 @@ public partial class MainWindow : Window
                 if (key == showKey)
                 {
                     _blockedV = true; _winVChord = true; _pendingWinKey = 0;
-                    Dispatcher.BeginInvoke(ShowPanel);
+                    Dispatcher.BeginInvoke(ShowDefaultPanel);
                     return new IntPtr(1);
                 }
                 var pending = (byte)_pendingWinKey; _pendingWinKey = 0;
@@ -640,6 +640,11 @@ public partial class MainWindow : Window
     private void ShowCategory(string category)
     {
         _selectedCategory = category; _showPinnedOnly = false; RefreshFilter(); ShowPanel();
+    }
+
+    private void ShowDefaultPanel()
+    {
+        _selectedCategory = null; _showPinnedOnly = false; RefreshFilter(); ShowPanel();
     }
 
     private static bool TryParseHotkey(string text, out uint modifiers, out uint virtualKey)
