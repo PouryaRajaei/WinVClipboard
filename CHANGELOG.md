@@ -8,6 +8,23 @@
 
 - بسته‌بندی و انتشار عمومی در Microsoft Store
 
+## [1.5.1] - 2026-07-22
+
+### Fixed
+
+- ردیابی مستقل وضعیت Ctrl، Alt و Shift هنگام ضبط Hotkey
+- اصلاح ضبط میانبرهای دسته و پنل بدون اجبار به استفاده از کلید Win
+
+## [1.5.0] - 2026-07-22
+
+### Added
+
+- ضبط و ذخیرهٔ Hotkey مستقل برای هر دسته‌بندی
+- ثبت هم‌زمان چند میانبر سراسری دسته‌ها
+- بازکردن پنل و فیلتر مستقیم روی دستهٔ مرتبط با میانبر
+- نمایش میانبر دسته در Tooltip چیپ آن
+- تشخیص تداخل یا نامعتبربودن میانبر دسته
+
 ## [1.4.0] - 2026-07-22
 
 ### Added
@@ -119,7 +136,9 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.5...v1.4.0
 [1.3.5]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.3.3...v1.3.4

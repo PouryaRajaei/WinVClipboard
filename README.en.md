@@ -40,6 +40,7 @@ Windows' built-in clipboard keeps a limited history and offers little organizati
 - Dark, Light, and System themes; configurable history and thumbnail sizes
 - Live recording of any supported global panel hotkey and selectable `Ctrl/Alt + 1…9` pinned shortcuts
 - Dedicated Text Shortcuts settings tab with add, inline edit, and remove actions
+- Per-category global hotkeys that open the panel directly with that category selected
 - GitHub Releases update checking
 - Seamless architecture-aware download, installation, and automatic relaunch
 - Automated x64/ARM64 builds, optional signing, and MSIX tooling
@@ -127,7 +128,7 @@ The project follows [Semantic Versioning](https://semver.org/) using `MAJOR.MINO
 - `MINOR` for backward-compatible features
 - `PATCH` for backward-compatible fixes
 
-Current version: **1.4.0**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
+Current version: **1.5.1**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
 
 See [STORE-PUBLISHING.md](STORE-PUBLISHING.md) for packaging and Store submission instructions.
 

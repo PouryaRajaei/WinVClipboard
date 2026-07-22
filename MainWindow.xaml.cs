@@ -45,9 +45,12 @@ public partial class MainWindow : Window
     private Action<Key, ModifierKeys>? _hotkeyCapture;
     private int _blockedRecordingKey;
     private bool _recordingWin;
+    private ModifierKeys _recordingModifiers;
     private bool _suppressCapture, _blockedV, _winVChord, _reallyExit, _showPinnedOnly;
     private bool _useWinHookHotkey = true;
     private string _lastWorkingHotkey = "Win+V";
+    private readonly Dictionary<int, string> _categoryHotkeyMap = [];
+    private readonly HashSet<int> _registeredHotkeyIds = [];
     private static readonly UIntPtr InjectionMarker = new(0xC0D3);
 
     public MainWindow()
@@ -77,13 +80,14 @@ public partial class MainWindow : Window
         _source = (HwndSource)PresentationSource.FromVisual(this);
         _source.AddHook(WndProc);
         AddClipboardFormatListener(_source.Handle);
-        UpdateRegisteredHotkey(false);
+        UpdateRegisteredHotkeys(false);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_CLIPBOARDUPDATE && !_suppressCapture) Dispatcher.BeginInvoke(CaptureClipboard, DispatcherPriority.Background);
         else if (msg == WM_HOTKEY && wParam.ToInt32() == PANEL_HOTKEY_ID) { Dispatcher.BeginInvoke(ShowPanel); handled = true; }
+        else if (msg == WM_HOTKEY && _categoryHotkeyMap.TryGetValue(wParam.ToInt32(), out var category)) { Dispatcher.BeginInvoke(() => ShowCategory(category)); handled = true; }
         return IntPtr.Zero;
     }
 
@@ -176,7 +180,7 @@ public partial class MainWindow : Window
         CategoriesPanel.Children.Clear();
         AddCategoryChip(Localizer.T("All"), null, "ViewGrid", false);
         AddCategoryChip(Localizer.T("Uncategorized"), UncategorizedFilter, "TagOff", false);
-        foreach (var category in _categories.OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase)) AddCategoryChip(category.Name, category.Name, category.IconKind, true);
+        foreach (var category in _categories.OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase)) AddCategoryChip(string.IsNullOrWhiteSpace(category.Hotkey) ? category.Name : $"{category.Name}  •  {category.Hotkey.Replace("+", " + ")}", category.Name, category.IconKind, true);
         var add = new System.Windows.Controls.Button { Content = MakeMaterialIcon("Plus", 18), ToolTip = Localizer.T("NewCategory"), Tag = "__ADD__", Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(9, 5, 9, 5) };
         add.Click += CategoryChip_Click; CategoriesPanel.Children.Add(add);
     }
@@ -287,16 +291,28 @@ public partial class MainWindow : Window
             if (_hotkeyCapture != null)
             {
                 var isModifier = key is 0x10 or 0x11 or 0x12 or 0xA0 or 0xA1 or 0xA2 or 0xA3 or 0xA4 or 0xA5;
-                if (key is VK_LWIN or VK_RWIN) { _recordingWin = down || (!up && _recordingWin); return new IntPtr(1); }
-                if (isModifier) return new IntPtr(1);
+                if (key is VK_LWIN or VK_RWIN)
+                {
+                    _recordingWin = down || (!up && _recordingWin);
+                    if (down) _recordingModifiers |= ModifierKeys.Windows; else if (up) _recordingModifiers &= ~ModifierKeys.Windows;
+                    return new IntPtr(1);
+                }
+                if (isModifier)
+                {
+                    var modifier = key switch
+                    {
+                        0x11 or 0xA2 or 0xA3 => ModifierKeys.Control,
+                        0x12 or 0xA4 or 0xA5 => ModifierKeys.Alt,
+                        _ => ModifierKeys.Shift
+                    };
+                    if (down) _recordingModifiers |= modifier; else if (up) _recordingModifiers &= ~modifier;
+                    return new IntPtr(1);
+                }
                 if (up && key == _blockedRecordingKey) { _blockedRecordingKey = 0; return new IntPtr(1); }
                 if (down)
                 {
-                    var modifiers = ModifierKeys.None;
-                    if ((GetAsyncKeyState(0x11) & 0x8000) != 0) modifiers |= ModifierKeys.Control;
-                    if ((GetAsyncKeyState(0x12) & 0x8000) != 0) modifiers |= ModifierKeys.Alt;
-                    if ((GetAsyncKeyState(0x10) & 0x8000) != 0) modifiers |= ModifierKeys.Shift;
-                    if (_recordingWin || (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0) modifiers |= ModifierKeys.Windows;
+                    var modifiers = _recordingModifiers;
+                    if (_recordingWin) modifiers |= ModifierKeys.Windows;
                     _blockedRecordingKey = key;
                     var callback = _hotkeyCapture; Dispatcher.BeginInvoke(() => callback?.Invoke(KeyInterop.KeyFromVirtualKey(key), modifiers));
                     return new IntPtr(1);
@@ -528,7 +544,7 @@ public partial class MainWindow : Window
         ReleaseCtrlKeys();
         _pendingWinKey = 0; _winVChord = false;
         if (_source != null) RemoveClipboardFormatListener(_source.Handle);
-        if (_source != null) UnregisterHotKey(_source.Handle, PANEL_HOTKEY_ID);
+        if (_source != null) foreach (var id in _registeredHotkeyIds) UnregisterHotKey(_source.Handle, id);
         if (_hookThreadId != 0) PostThreadMessage(_hookThreadId, 0x0012, IntPtr.Zero, IntPtr.Zero);
         DismissTextSuggestion(); SaveHistoryImmediate(); SaveCategories(); SaveTextShortcuts(); base.OnClosing(e);
     }
@@ -591,24 +607,39 @@ public partial class MainWindow : Window
         CleanupExpiredItems();
         while (_all.Count > Localizer.MaxHistory && _all.LastOrDefault(x => !x.IsPinned) is { } old) _all.Remove(old);
         RefreshFilter();
-        UpdateRegisteredHotkey(true);
+        UpdateRegisteredHotkeys(true);
         Dispatcher.BeginInvoke(PositionPanelAtMouse, DispatcherPriority.Loaded);
     }
 
-    private bool UpdateRegisteredHotkey(bool notifyFailure)
+    private bool UpdateRegisteredHotkeys(bool notifyFailure)
     {
         if (_source == null) return true;
-        UnregisterHotKey(_source.Handle, PANEL_HOTKEY_ID);
+        foreach (var id in _registeredHotkeyIds) UnregisterHotKey(_source.Handle, id);
+        _registeredHotkeyIds.Clear(); _categoryHotkeyMap.Clear();
         _useWinHookHotkey = Localizer.ShowHotkey.Equals("Win+V", StringComparison.OrdinalIgnoreCase) || Localizer.ShowHotkey.Equals("Win+C", StringComparison.OrdinalIgnoreCase);
-        if (_useWinHookHotkey) { _lastWorkingHotkey = Localizer.ShowHotkey; return true; }
-        if (!TryParseHotkey(Localizer.ShowHotkey, out var modifiers, out var key) || !RegisterHotKey(_source.Handle, PANEL_HOTKEY_ID, modifiers | 0x4000, key))
+        uint modifiers = 0, key = 0;
+        if (_useWinHookHotkey) _lastWorkingHotkey = Localizer.ShowHotkey;
+        else if (!TryParseHotkey(Localizer.ShowHotkey, out modifiers, out key) || !RegisterHotKey(_source.Handle, PANEL_HOTKEY_ID, modifiers | 0x4000, key))
         {
             if (notifyFailure) MessageBox.Show(Localizer.IsPersian ? "این میانبر توسط برنامهٔ دیگری استفاده می‌شود یا معتبر نیست." : "This hotkey is invalid or already used by another application.", "WinVClipboard", MessageBoxButton.OK, MessageBoxImage.Warning);
             Localizer.ShowHotkey = _lastWorkingHotkey; Localizer.Save();
+            UpdateRegisteredHotkeys(false);
             return false;
         }
-        _lastWorkingHotkey = Localizer.ShowHotkey;
-        return true;
+        else { _registeredHotkeyIds.Add(PANEL_HOTKEY_ID); _lastWorkingHotkey = Localizer.ShowHotkey; }
+        var allValid = true; var categoryId = 0x4500;
+        foreach (var category in _categories.Where(x => !string.IsNullOrWhiteSpace(x.Hotkey)))
+        {
+            if (!TryParseHotkey(category.Hotkey, out modifiers, out key) || !RegisterHotKey(_source.Handle, categoryId, modifiers | 0x4000, key)) { allValid = false; categoryId++; continue; }
+            _registeredHotkeyIds.Add(categoryId); _categoryHotkeyMap[categoryId] = category.Name; categoryId++;
+        }
+        if (!allValid && notifyFailure) MessageBox.Show(Localizer.T("CategoryHotkeyError"), "WinVClipboard", MessageBoxButton.OK, MessageBoxImage.Warning);
+        return allValid;
+    }
+
+    private void ShowCategory(string category)
+    {
+        _selectedCategory = category; _showPinnedOnly = false; RefreshFilter(); ShowPanel();
     }
 
     private static bool TryParseHotkey(string text, out uint modifiers, out uint virtualKey)
@@ -675,8 +706,8 @@ public partial class MainWindow : Window
     public void ClearUnpinnedFromSettings() => ClearButton_Click(this, new RoutedEventArgs());
     public void ExitFromTray() { _reallyExit = true; Close(); Application.Current.Shutdown(); }
     public void ExitForUpdate() { _reallyExit = true; Close(); Application.Current.Shutdown(); }
-    public void BeginHotkeyRecording(Action<Key, ModifierKeys> callback) { _hotkeyCapture = callback; _recordingWin = false; _blockedRecordingKey = 0; }
-    public void EndHotkeyRecording() { _hotkeyCapture = null; _recordingWin = false; _blockedRecordingKey = 0; }
+    public void BeginHotkeyRecording(Action<Key, ModifierKeys> callback) { _hotkeyCapture = callback; _recordingWin = false; _recordingModifiers = ModifierKeys.None; _blockedRecordingKey = 0; }
+    public void EndHotkeyRecording() { _hotkeyCapture = null; _recordingWin = false; _recordingModifiers = ModifierKeys.None; _blockedRecordingKey = 0; }
     private void TextShortcutsButton_Click(object sender, RoutedEventArgs e)
     {
         List<TextShortcut> snapshot;
@@ -701,14 +732,14 @@ public partial class MainWindow : Window
 
     private CategoryDefinition? CreateCategory(ClipItem? assignTo = null)
     {
-        var dialog = new CategoryEditorDialog { Owner = this };
+        var dialog = new CategoryEditorDialog(this) { Owner = this };
         if (dialog.ShowDialog() != true) return null;
         var existing = _categories.FirstOrDefault(x => x.Name.Equals(dialog.CategoryName, StringComparison.CurrentCultureIgnoreCase));
-        if (existing == null) { existing = new CategoryDefinition(dialog.CategoryName, dialog.IconKind); _categories.Add(existing); }
-        else existing.IconKind = dialog.IconKind;
+        if (existing == null) { existing = new CategoryDefinition(dialog.CategoryName, dialog.IconKind, dialog.Hotkey); _categories.Add(existing); }
+        else { existing.IconKind = dialog.IconKind; existing.Hotkey = dialog.Hotkey; }
         SaveCategories();
         if (assignTo != null) { assignTo.Category = existing.Name; SaveHistory(); }
-        RefreshFilter(); return existing;
+        RefreshFilter(); UpdateRegisteredHotkeys(true); return existing;
     }
 
     private void CategoryButton_Click(object sender, RoutedEventArgs e)
@@ -737,7 +768,7 @@ public partial class MainWindow : Window
         foreach (var item in _all.Where(x => x.Category.Equals(category, StringComparison.CurrentCultureIgnoreCase))) item.Category = "";
         _categories.RemoveAll(x => x.Name.Equals(category, StringComparison.CurrentCultureIgnoreCase));
         if (_selectedCategory?.Equals(category, StringComparison.CurrentCultureIgnoreCase) == true) _selectedCategory = null;
-        SaveCategories(); SaveHistory(); RefreshFilter();
+        SaveCategories(); SaveHistory(); RefreshFilter(); UpdateRegisteredHotkeys(false);
     }
 
     private void EditCategory_Click(object sender, RoutedEventArgs e)
@@ -745,12 +776,12 @@ public partial class MainWindow : Window
         if (((FrameworkElement)sender).Tag is not string oldName) return;
         var category = _categories.FirstOrDefault(x => x.Name.Equals(oldName, StringComparison.CurrentCultureIgnoreCase));
         if (category == null) return;
-        var dialog = new CategoryEditorDialog(category.Name, category.IconKind) { Owner = this };
+        var dialog = new CategoryEditorDialog(this, category.Name, category.IconKind, category.Hotkey) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         foreach (var item in _all.Where(x => x.Category.Equals(oldName, StringComparison.CurrentCultureIgnoreCase))) item.Category = dialog.CategoryName;
-        category.Name = dialog.CategoryName; category.IconKind = dialog.IconKind;
+        category.Name = dialog.CategoryName; category.IconKind = dialog.IconKind; category.Hotkey = dialog.Hotkey;
         if (_selectedCategory?.Equals(oldName, StringComparison.CurrentCultureIgnoreCase) == true) _selectedCategory = category.Name;
-        SaveCategories(); SaveHistory(); RefreshFilter();
+        SaveCategories(); SaveHistory(); RefreshFilter(); UpdateRegisteredHotkeys(true);
     }
     private void DeleteButton_Click(object sender, RoutedEventArgs e) { if (((FrameworkElement)sender).Tag is ClipItem item) { _all.Remove(item); SaveHistory(); RefreshFilter(); } }
     private void ClearButton_Click(object sender, RoutedEventArgs e) { foreach (var item in _all.Where(x => !x.IsPinned).ToList()) _all.Remove(item); SaveHistory(); RefreshFilter(); }
@@ -863,9 +894,10 @@ public enum ClipKind { Text, Image, Files }
 public sealed class CategoryDefinition
 {
     public CategoryDefinition() { }
-    public CategoryDefinition(string name, string iconKind) { Name = name; IconKind = iconKind; }
+    public CategoryDefinition(string name, string iconKind, string hotkey = "") { Name = name; IconKind = iconKind; Hotkey = hotkey; }
     public string Name { get; set; } = "";
     public string IconKind { get; set; } = "Folder";
+    public string Hotkey { get; set; } = "";
 }
 
 public sealed class CategoryEditorDialog : Window
@@ -878,19 +910,24 @@ public sealed class CategoryEditorDialog : Window
     ];
 
     private readonly System.Windows.Controls.TextBox _nameBox;
+    private readonly System.Windows.Controls.TextBox _hotkeyBox;
     private readonly List<System.Windows.Controls.Button> _iconButtons = [];
     private string _selectedIcon;
+    private string _hotkey;
+    private readonly MainWindow _host;
     public string CategoryName => _nameBox.Text.Trim();
     public string IconKind => _selectedIcon;
+    public string Hotkey => _hotkey;
 
-    public CategoryEditorDialog(string name = "", string iconKind = "Folder")
+    public CategoryEditorDialog(MainWindow host, string name = "", string iconKind = "Folder", string hotkey = "")
     {
-        _selectedIcon = iconKind;
-        Title = Localizer.T("CategoryDialog"); Width = 430; Height = 430; WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        _host = host; _selectedIcon = iconKind; _hotkey = hotkey;
+        Title = Localizer.T("CategoryDialog"); Width = 450; Height = 510; WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 30, 30));
         Foreground = System.Windows.Media.Brushes.White; FlowDirection = Localizer.Direction;
 
         var root = new System.Windows.Controls.Grid { Margin = new Thickness(18) };
+        root.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new System.Windows.Controls.RowDefinition());
@@ -901,6 +938,13 @@ public sealed class CategoryEditorDialog : Window
         _nameBox = new System.Windows.Controls.TextBox { Text = name, FontSize = 14, Padding = new Thickness(10, 8, 10, 8), Margin = new Thickness(0, 0, 0, 14), FlowDirection = Localizer.Direction };
         System.Windows.Controls.Grid.SetRow(_nameBox, 1); root.Children.Add(_nameBox);
 
+        var hotkeyArea = new System.Windows.Controls.StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+        hotkeyArea.Children.Add(new System.Windows.Controls.TextBlock { Text = Localizer.T("CategoryHotkey"), Foreground = (System.Windows.Media.Brush)Application.Current.Resources["MutedBrush"], Margin = new Thickness(0, 0, 0, 5) });
+        _hotkeyBox = new System.Windows.Controls.TextBox { Text = string.IsNullOrWhiteSpace(hotkey) ? Localizer.T("CategoryHotkeyHint") : hotkey.Replace("+", " + "), IsReadOnly = true, FontSize = 14, FontWeight = FontWeights.SemiBold, Padding = new Thickness(10, 8, 10, 8), Cursor = System.Windows.Input.Cursors.Hand };
+        _hotkeyBox.GotKeyboardFocus += (_, _) => { _hotkeyBox.Text = Localizer.T("HotkeyRecording"); _host.BeginHotkeyRecording(HotkeyRecorded); };
+        _hotkeyBox.LostKeyboardFocus += (_, _) => _host.EndHotkeyRecording(); hotkeyArea.Children.Add(_hotkeyBox);
+        System.Windows.Controls.Grid.SetRow(hotkeyArea, 2); root.Children.Add(hotkeyArea);
+
         var icons = new System.Windows.Controls.WrapPanel { FlowDirection = FlowDirection.LeftToRight };
         foreach (var iconName in MaterialIcons)
         {
@@ -909,16 +953,27 @@ public sealed class CategoryEditorDialog : Window
             button.Click += Icon_Click; _iconButtons.Add(button); icons.Children.Add(button);
         }
         var scroll = new System.Windows.Controls.ScrollViewer { Content = icons, VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto };
-        System.Windows.Controls.Grid.SetRow(scroll, 2); root.Children.Add(scroll);
+        System.Windows.Controls.Grid.SetRow(scroll, 3); root.Children.Add(scroll);
 
         var actions = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 12, 0, 0) };
         var save = new System.Windows.Controls.Button { Content = Localizer.T("Save"), Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(42, 112, 180)), Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(6, 0, 0, 0) };
         save.Click += (_, _) => Save();
         var cancel = new System.Windows.Controls.Button { Content = Localizer.T("Cancel"), Padding = new Thickness(18, 7, 18, 7) }; cancel.Click += (_, _) => { DialogResult = false; Close(); };
-        actions.Children.Add(save); actions.Children.Add(cancel); System.Windows.Controls.Grid.SetRow(actions, 3); root.Children.Add(actions);
+        actions.Children.Add(save); actions.Children.Add(cancel); System.Windows.Controls.Grid.SetRow(actions, 4); root.Children.Add(actions);
         Content = root;
         Loaded += (_, _) => { UpdateIconSelection(); _nameBox.Focus(); _nameBox.SelectAll(); };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { DialogResult = false; Close(); } else if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None) Save(); };
+        Closed += (_, _) => _host.EndHotkeyRecording();
+    }
+
+    private void HotkeyRecorded(Key key, ModifierKeys modifiers)
+    {
+        if (key == Key.Escape) { _hotkeyBox.Text = string.IsNullOrWhiteSpace(_hotkey) ? Localizer.T("CategoryHotkeyHint") : _hotkey.Replace("+", " + "); Keyboard.ClearFocus(); return; }
+        if (key == Key.Back) { _hotkey = ""; _hotkeyBox.Text = Localizer.T("CategoryHotkeyHint"); Keyboard.ClearFocus(); return; }
+        var parts = new List<string>();
+        if ((modifiers & ModifierKeys.Control) != 0) parts.Add("Ctrl"); if ((modifiers & ModifierKeys.Alt) != 0) parts.Add("Alt");
+        if ((modifiers & ModifierKeys.Shift) != 0) parts.Add("Shift"); if ((modifiers & ModifierKeys.Windows) != 0) parts.Add("Win");
+        if (parts.Count == 0) return; parts.Add(key.ToString()); _hotkey = string.Join("+", parts); _hotkeyBox.Text = string.Join(" + ", parts); Keyboard.ClearFocus();
     }
 
     private void Icon_Click(object sender, RoutedEventArgs e) { _selectedIcon = (string)((FrameworkElement)sender).Tag; UpdateIconSelection(); }
