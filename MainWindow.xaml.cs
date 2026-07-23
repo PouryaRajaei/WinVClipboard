@@ -638,6 +638,7 @@ public partial class MainWindow : Window
         RefreshFilter();
     }
     private void SettingsButton_Click(object sender, RoutedEventArgs e) => new SettingsWindow(this).ShowDialog();
+    private void CalendarButton_Click(object sender, RoutedEventArgs e) => new CalendarWindow { Owner = this }.ShowDialog();
 
     private void ApplyPanelSize(PanelSize size)
     {

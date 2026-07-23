@@ -5,8 +5,8 @@
 3. Build each package with the exact identity supplied by Partner Center:
 
 ```powershell
-./scripts/Build-MSIX.ps1 -Runtime win-x64 -IdentityName 'YOUR_IDENTITY' -Publisher 'CN=YOUR_PUBLISHER_ID' -Version '1.5.13.0'
-./scripts/Build-MSIX.ps1 -Runtime win-arm64 -IdentityName 'YOUR_IDENTITY' -Publisher 'CN=YOUR_PUBLISHER_ID' -Version '1.5.13.0'
+./scripts/Build-MSIX.ps1 -Runtime win-x64 -IdentityName 'YOUR_IDENTITY' -Publisher 'CN=YOUR_PUBLISHER_ID' -Version '1.5.14.0'
+./scripts/Build-MSIX.ps1 -Runtime win-arm64 -IdentityName 'YOUR_IDENTITY' -Publisher 'CN=YOUR_PUBLISHER_ID' -Version '1.5.14.0'
 ```
 
 4. Use a certificate whose Subject exactly matches Publisher to sign packages submitted outside Partner Center. Store submissions are signed by Microsoft after certification.

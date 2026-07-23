@@ -7,9 +7,11 @@
 [English](README.en.md) · [تغییرات نسخه‌ها](CHANGELOG.md) · [دریافت آخرین نسخه](https://github.com/PouryaRajaei/WinVClipboard/releases/latest)
 
 
-![نمای پنل WinVClipboard](docs/screenshots/clipboard-panel.png)
-
-![نمای تنظیمات WinVClipboard](docs/screenshots/clipboard-panel2.png)
+<p align="center">
+  <a href="docs/screenshots/clipboard-panel.png"><img src="docs/screenshots/clipboard-panel.png" alt="نمای پنل WinVClipboard" width="280"></a>
+  &nbsp;
+  <a href="docs/screenshots/clipboard-panel2.png"><img src="docs/screenshots/clipboard-panel2.png" alt="نمای تنظیمات WinVClipboard" width="280"></a>
+</p>
 
 ## چرا WinVClipboard؟
 
@@ -131,7 +133,7 @@ dotnet publish -c Release -r win-arm64 --self-contained true -p:PublishSingleFil
 - `MINOR`: قابلیت جدید سازگار
 - `PATCH`: رفع باگ سازگار
 
-نسخهٔ فعلی: **1.5.13**. جزئیات هر نسخه در [CHANGELOG.md](CHANGELOG.md) ثبت می‌شود.
+نسخهٔ فعلی: **1.5.14**. جزئیات هر نسخه در [CHANGELOG.md](CHANGELOG.md) ثبت می‌شود.
 
 راهنمای بسته‌بندی و Store در [STORE-PUBLISHING.md](STORE-PUBLISHING.md) قرار دارد.
 

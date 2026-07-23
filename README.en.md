@@ -5,9 +5,11 @@ A fast, native Windows clipboard manager with the familiar `Win + V` experience,
 [فارسی](README.md) · [Changelog](CHANGELOG.md) · [Download latest release](https://github.com/PouryaRajaei/WinVClipboard/releases/latest)
 
 
-![WinVClipboard panel](docs/screenshots/clipboard-panel.png)
-
-![WinVClipboard settings](docs/screenshots/clipboard-panel2.png)
+<p align="center">
+  <a href="docs/screenshots/clipboard-panel.png"><img src="docs/screenshots/clipboard-panel.png" alt="WinVClipboard panel" width="280"></a>
+  &nbsp;
+  <a href="docs/screenshots/clipboard-panel2.png"><img src="docs/screenshots/clipboard-panel2.png" alt="WinVClipboard settings" width="280"></a>
+</p>
 
 ## Why WinVClipboard?
 
@@ -129,7 +131,7 @@ The project follows [Semantic Versioning](https://semver.org/) using `MAJOR.MINO
 - `MINOR` for backward-compatible features
 - `PATCH` for backward-compatible fixes
 
-Current version: **1.5.13**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
+Current version: **1.5.14**. Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).
 
 See [STORE-PUBLISHING.md](STORE-PUBLISHING.md) for packaging and Store submission instructions.
 

@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [1.5.14] - 2026-07-22
+
+### Changed
+
+- اسکرین‌شات‌های README فارسی و انگلیسی به تصویر بندانگشتی ۲۸۰ پیکسلی و قابل‌کلیک تبدیل شدند.
+- Converted README screenshots to compact, clickable 280-pixel thumbnails.
+
 ## [1.5.13] - 2026-07-22
 
 ### Changed
@@ -222,7 +229,8 @@
 - حالت اجرای مخفی `--startup`
 - خروجی‌های self-contained برای Windows x64 و ARM64
 
-[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.13...HEAD
+[Unreleased]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.14...HEAD
+[1.5.14]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.13...v1.5.14
 [1.5.13]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.12...v1.5.13
 [1.5.12]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.11...v1.5.12
 [1.5.11]: https://github.com/PouryaRajaei/WinVClipboard/compare/v1.5.10...v1.5.11

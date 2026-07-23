@@ -8,6 +8,7 @@ public partial class App : Application
     private MainWindow? _window;
     private Mutex? _singleInstance;
     private System.Windows.Forms.NotifyIcon? _tray;
+    private ReminderService? _reminders;
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -16,9 +17,19 @@ public partial class App : Application
         if (!isFirst) { Shutdown(); return; }
         _window = new MainWindow();
         InitializeTray();
+        _reminders = new ReminderService(ShowReminderNotification);
         var startHidden = e.Args.Any(arg => arg.Equals("--startup", StringComparison.OrdinalIgnoreCase));
         _window.InitializeInBackground(showImmediately: !startHidden);
         _ = UpdateService.CheckAtStartupAsync(_window);
+    }
+
+    private void ShowReminderNotification(ReminderItem reminder)
+    {
+        if (_tray == null) return;
+        _tray.BalloonTipTitle = "یادآور WinVClipboard";
+        _tray.BalloonTipText = reminder.Title;
+        _tray.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
+        _tray.ShowBalloonTip(10000);
     }
 
     private void InitializeTray()
@@ -42,6 +53,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _reminders?.Dispose();
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _singleInstance?.Dispose(); base.OnExit(e);
     }
