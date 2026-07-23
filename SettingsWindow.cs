@@ -107,7 +107,7 @@ public sealed class SettingsWindow : Window
         about.Children.Add(new TextBlock { Text =
             "Pourya Rajaei\n" +
             "https://t.me/PouryaRajaei\n" +
-            "Tel: +989309483323\n" +
+            "Tel: 0989309483323\n" +
             "Pourya.Rajaei@gmail.com\n" +
             "https://github.com/PouryaRajaei/WinVClipboard", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 18) });
         var update = Button(Localizer.T("CheckUpdates")); update.Click += CheckUpdates_Click; about.Children.Add(update);

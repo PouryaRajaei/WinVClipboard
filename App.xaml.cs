@@ -1,4 +1,6 @@
 using System.Windows;
+using Microsoft.Windows.AppNotifications;
+using Microsoft.Windows.AppNotifications.Builder;
 using Application = System.Windows.Application;
 
 namespace WinVClipboard;
@@ -17,19 +19,39 @@ public partial class App : Application
         if (!isFirst) { Shutdown(); return; }
         _window = new MainWindow();
         InitializeTray();
+        TryRegisterNotifications();
         _reminders = new ReminderService(ShowReminderNotification);
         var startHidden = e.Args.Any(arg => arg.Equals("--startup", StringComparison.OrdinalIgnoreCase));
         _window.InitializeInBackground(showImmediately: !startHidden);
         _ = UpdateService.CheckAtStartupAsync(_window);
     }
 
-    private void ShowReminderNotification(ReminderItem reminder)
+    private void ShowReminderNotification(ReminderItem reminder, bool wasMissed)
     {
-        if (_tray == null) return;
-        _tray.BalloonTipTitle = "یادآور WinVClipboard";
-        _tray.BalloonTipText = reminder.Title;
-        _tray.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
-        _tray.ShowBalloonTip(10000);
+        var heading = wasMissed ? "یادآور عقب‌افتاده" : "یادآور WinVClipboard";
+        try
+        {
+            var notification = new AppNotificationBuilder()
+                .AddText(heading)
+                .AddText(reminder.Title)
+                .BuildNotification();
+            AppNotificationManager.Default.Show(notification);
+            return;
+        }
+        catch { }
+        if (_tray != null)
+        {
+            _tray.BalloonTipTitle = heading;
+            _tray.BalloonTipText = reminder.Title;
+            _tray.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
+            _tray.ShowBalloonTip(10000);
+        }
+    }
+
+    private static void TryRegisterNotifications()
+    {
+        try { AppNotificationManager.Default.Register(); }
+        catch { }
     }
 
     private void InitializeTray()
@@ -54,6 +76,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _reminders?.Dispose();
+        try { AppNotificationManager.Default.Unregister(); } catch { }
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _singleInstance?.Dispose(); base.OnExit(e);
     }
